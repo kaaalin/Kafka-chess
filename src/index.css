@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+/* Optional utility for chess glyphs fallback */
+.chess-font { font-family: 'Noto Chess','Noto Sans Symbols 2','DejaVu Sans',serif; }
+
+:root { color-scheme: dark; }
