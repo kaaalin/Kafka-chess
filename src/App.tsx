@@ -16,7 +16,25 @@ function createInitialBoard():Square[]{ const board:Square[]=[]; for(const r of 
 function initialGame():GameState{ return { board:createInitialBoard(), turn:"white", moveNumber:1, stock:{white:emptyStock(),black:emptyStock()}, quietus:{white:zeroStock(),black:zeroStock()}, kingOnBoard:{white:false,black:false}, kingProtectedUntil:{white:null,black:null}, selected:null, promotion:null, message:null, winner:null, winReason:null, ai:{mode:'human',cpuPlays:'black',level:'Medium'}, lastMove:null } }
 
 function legalMovesForPiece(gs:GameState,from:Square):{f:number;r:number}[]{ const occ=from.occupant as Extract<Occupant,{kind:"piece"}>; const color=occ.color, board=gs.board, moves:{f:number;r:number}[]=[]; const f0=from.file,r0=from.rank, limit316=!occ.mustReturn; const canLand=(nf:number,nr:number)=> inBounds(nf,nr)&&(!limit316||(nr>=3&&nr<=6)) && (!board.find(s=>s.file===nf&&s.rank===nr)!.occupant || (board.find(s=>s.file===nf&&s.rank===nr)!.occupant as any).color!==color); const rays=(dirs:[number,number][])=>{ for(const [df,dr] of dirs){ let nf=f0+df,nr=r0+dr; while(inBounds(nf,nr)){ if(limit316&&!(nr>=3&&nr<=6)) break; const o=board.find(s=>s.file===nf&&s.rank===nr)!.occupant; if(!o) moves.push({f:nf,r:nr}); else { if((o as any).kind==="piece"&&(o as any).color!==color) moves.push({f:nf,r:nr}); break } nf+=df; nr+=dr } } }; switch(occ.type){ case"N":{ for(const [df,dr] of [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]] as const){ const nf=f0+df,nr=r0+dr; if(canLand(nf,nr)) moves.push({f:nf,r:nr}) } break } case"B":rays([[1,1],[1,-1],[-1,1],[-1,-1]]);break; case"R":rays([[1,0],[-1,0],[0,1],[0,-1]]);break; case"Q":rays([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);break; case"K":{ for(let df=-1;df<=1;df++) for(let dr=-1;dr<=1;dr++){ if(!df&&!dr) continue; const nf=f0+df,nr=r0+dr; if(canLand(nf,nr)) moves.push({f:nf,r:nr}) } break } case"P":{ const dir=color==="white"?-1:1, one=r0+dir; if(inBounds(f0,one)&&!gs.board.find(s=>s.file===f0&&s.rank===one)!.occupant) moves.push({f:f0,r:one}); for(const df of [-1,1]){ const nf=f0+df,nr=r0+dir; if(!inBounds(nf,nr)) continue; const o=gs.board.find(s=>s.file===nf&&s.rank===nr)!.occupant; if(o&&(o as any).kind==="piece"&&(o as any).color!==color) moves.push({f:nf,r:nr}) } break } } return moves }
-function legalMovesForMetamorph(gs:GameState,from:Square){ const m=from.occupant as Extract<Occupant,{kind:"metamorph"}>, dir=m.color==="white"?-1:1, nr=from.rank+dir; if(!inBounds(from.file,nr)) return []; const dest=gs.board.find(s=>s.file===from.file&&s.rank===nr)!; return dest.occupant?[]:[{f:from.file,r:nr}] }
+
+function legalMovesForMetamorph(gs:GameState,from:Square){
+  const m=from.occupant as Extract<Occupant,{kind:"metamorph"}>;
+  const dir=m.color==="white"?-1:1;
+  const nr=from.rank+dir;
+  if(!inBounds(from.file,nr)) return [];
+  const dest=gs.board.find(s=>s.file===from.file&&s.rank===nr)!;
+  if(dest.occupant) return [];
+  // Special rule: If a player has an active king piece in Metamorphia (ranks 3–6),
+  // their metamorphs may NOT step onto an *unoccupied* king piece card square.
+  const hasActiveKingInMetamorphia = gs.board.some(sq=>{
+    const o = sq.occupant;
+    return o && o.kind==="piece" && o.color===m.color && o.type==="K" && sq.rank>=3 && sq.rank<=6;
+  });
+  if(hasActiveKingInMetamorphia && dest.blueSymbol==="K" && dest.rank>=3 && dest.rank<=6){
+    return [];
+  }
+  return [{f:from.file,r:nr}];
+}
 
 function applyAutoTransforms(gs:GameState){ const next=deepClone(gs); for(const sq of next.board){ if(!(sq.rank>=3&&sq.rank<=6)||!sq.blueSymbol||!sq.occupant) continue; if(sq.occupant.kind==="metamorph"){ const c=sq.occupant.color,t=sq.blueSymbol; if(next.stock[c][t]>0){ next.stock[c][t]--; sq.occupant={kind:"piece",color:c,type:t,bornAtTurn:next.moveNumber}; } } else { const c=sq.occupant.color,cur=sq.occupant.type,t=sq.blueSymbol; if(cur!==t&&next.stock[c][t]>0){ next.stock[c][cur]=Math.min(INITIAL_COUNTS[cur as PieceType], next.stock[c][cur]+1); next.stock[c][t]--; sq.occupant={kind:"piece",color:c,type:t,bornAtTurn:next.moveNumber}; if(cur==="K"&&t!=="K") next.kingOnBoard[c]=false; } } } return {newGs:next,changed:true} }
 
