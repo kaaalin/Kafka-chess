@@ -29,7 +29,26 @@ function performMove(gs:GameState,fromId:SquareId,toId:SquareId):GameState{ if(g
   if(to.occupant&&to.occupant.kind==="piece"&&to.occupant.type==="P"){ if((to.occupant.color==="white"&&to.rank===1)||(to.occupant.color==="black"&&to.rank===8)) next.promotion={square:to.id,color:to.occupant.color} }
   next.turn=next.turn==="white"?"black":"white"; next.moveNumber++;
   for(const sq of next.board){ const o=sq.occupant; if(o&&o.kind==="piece"&&o.mustReturn&&o.returnByTurn!==undefined){ const justMoved:Color=next.turn==="white"?"black":"white"; if(o.color===justMoved&&next.moveNumber>=o.returnByTurn){ if(!(sq.rank>=3&&sq.rank<=6)){ if(o.type==="K") next.kingOnBoard[o.color]=false; next.quietus[o.color][o.type]+=1; sq.occupant=null } else { o.mustReturn=false; (o as any).returnByTurn=undefined } } } }
-  const {newGs}=applyAutoTransforms(next); newGs.selected=null; newGs.message=null; const lastMover:Color=newGs.turn==="white"?"black":"white"; const win=detectWin(newGs,lastMover,capturedKing); if(win){ newGs.winner=win.winner; newGs.winReason=win.reason; newGs.message=`Winner: ${win.winner} (${win.reason})` } return newGs }
+  const {newGs}=applyAutoTransforms(next); newGs.selected=null; newGs.message=null; const lastMover:Color=newGs.turn==="white"?"black":"white"; const win=detectWin(newGs,lastMover,capturedKing); if(win){ newGs.winner=win.winner; newGs.winReason=win.reason; newGs.message=`Winner: ${win.winner} (${win.reason})`; }
+  else {
+    // If no immediate win, check whether there is a *legitimate* check:
+    // - the attacking side has a king on the board
+    // - the threatened king is not under post-appearance protection this turn.
+    const opponent: Color = newGs.turn; // side that is now to move / potentially in check
+    const ksq = findKingSquare(newGs, opponent);
+    if (ksq) {
+      const attackerHasKing = !!findKingSquare(newGs, lastMover);
+      const prot = newGs.kingProtectedUntil[opponent];
+      const kingProtectedNow = prot !== null && newGs.moveNumber === prot;
+      if (attackerHasKing && !kingProtectedNow) {
+        const inCheck = isSquareAttacked(newGs, ksq.file, ksq.rank, lastMover);
+        if (inCheck) {
+          newGs.message = `Check on ${opponent}!`;
+        }
+      }
+    }
+  }
+  return newGs }
 
 const activeCounts=(gs:GameState,c:Color)=>{const m:{[k in PieceType]:number}={K:0,Q:0,R:0,B:0,N:0,P:0}; for(const sq of gs.board){ const o=sq.occupant; if(o&&o.kind==="piece"&&o.color===c) m[o.type]++ } return m };
 const promotionAvailable=(gs:GameState,c:Color,t:PieceType)=> (t!=="K"&&t!=="P") && activeCounts(gs,c)[t]<INITIAL_COUNTS[t];
