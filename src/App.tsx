@@ -24,21 +24,47 @@ function legalMovesForMetamorph(gs:GameState,from:Square){
   if(!inBounds(from.file,nr)) return [];
   const dest=gs.board.find(s=>s.file===from.file&&s.rank===nr)!;
   if(dest.occupant) return [];
-  // Special rule: If a player has an active king piece in Metamorphia (ranks 3–6),
-  // their metamorphs may NOT step onto an *unoccupied* king piece card square.
-  const hasActiveKingInMetamorphia = gs.board.some(sq=>{
-    const o = sq.occupant;
-    return o && o.kind==="piece" && o.color===m.color && o.type==="K" && sq.rank>=3 && sq.rank<=6;
-  });
-  if(hasActiveKingInMetamorphia && dest.blueSymbol==="K" && dest.rank>=3 && dest.rank<=6){
-    return [];
-  }
   return [{f:from.file,r:nr}];
 }
 
 function applyAutoTransforms(gs:GameState){ const next=deepClone(gs); for(const sq of next.board){ if(!(sq.rank>=3&&sq.rank<=6)||!sq.blueSymbol||!sq.occupant) continue; if(sq.occupant.kind==="metamorph"){ const c=sq.occupant.color,t=sq.blueSymbol; if(next.stock[c][t]>0){ next.stock[c][t]--; sq.occupant={kind:"piece",color:c,type:t,bornAtTurn:next.moveNumber}; } } else { const c=sq.occupant.color,cur=sq.occupant.type,t=sq.blueSymbol; if(cur!==t&&next.stock[c][t]>0){ next.stock[c][cur]=Math.min(INITIAL_COUNTS[cur as PieceType], next.stock[c][cur]+1); next.stock[c][t]--; sq.occupant={kind:"piece",color:c,type:t,bornAtTurn:next.moveNumber}; if(cur==="K"&&t!=="K") next.kingOnBoard[c]=false; } } } return {newGs:next,changed:true} }
 
-function performMove(gs:GameState,fromId:SquareId,toId:SquareId):GameState{ if(gs.winner) return gs; const sFrom=gs.board.find(s=>s.id===fromId)!, sTo=gs.board.find(s=>s.id===toId)!; const mover=sFrom.occupant; if(!mover) return gs; const next=deepClone(gs), from=next.board.find(s=>s.id===fromId)!, to=next.board.find(s=>s.id===toId)!; let legal:{f:number;r:number}[]=[]; if(mover.kind==="metamorph"){ if(mover.color!==next.turn) return gs; legal=legalMovesForMetamorph(gs,sFrom) } else { if(mover.color!==next.turn) return gs; legal=legalMovesForPiece(gs,sFrom) } if(!legal.some(m=>m.f===to.file&&m.r===to.rank)) return {...gs,message:"Illegal move."}; const target=to.occupant; let capturedKing:Color|null=null; if(target&&target.kind==="piece"&&target.type==="K"){ const attackerColor=(mover as any).color as Color; const hasOwnKing=gs.board.some(s=>{const o=s.occupant; return o&&o.kind==="piece"&&o.type==="K"&&o.color===attackerColor}); if(!hasOwnKing) return {...gs,message:"You cannot take the king without your own king on the board."}; const prot=gs.kingProtectedUntil[target.color]; if(prot!==null&&gs.moveNumber===prot) return {...gs,message:"That king is protected this turn."}; }
+function performMove(gs:GameState,fromId:SquareId,toId:SquareId):GameState{
+  if(gs.winner) return gs;
+  const sFrom=gs.board.find(s=>s.id===fromId)!, sTo=gs.board.find(s=>s.id===toId)!;
+  const mover=sFrom.occupant;
+  if(!mover) return gs;
+  const next=deepClone(gs), from=next.board.find(s=>s.id===fromId)!, to=next.board.find(s=>s.id===toId)!;
+  let legal:{f:number;r:number}[]=[];
+
+  if(mover.kind==="metamorph"){
+    if(mover.color!==next.turn) return gs;
+
+    // Special king-card blocking rule with specific message
+    const dir = mover.color==="white" ? -1 : 1;
+    const expectedRank = sFrom.rank + dir;
+    const attemptingStandardStep = (sTo.file === sFrom.file && sTo.rank === expectedRank);
+
+    if(attemptingStandardStep){
+      const hasActiveKingInMetamorphia = gs.board.some(sq => {
+        const o = sq.occupant;
+        return o && o.kind === "piece" && o.color === mover.color && o.type === "K" && sq.rank >= 3 && sq.rank <= 6;
+      });
+      const isForbiddenKingCardTarget = !sTo.occupant && sTo.blueSymbol === "K" && sTo.rank >= 3 && sTo.rank <= 6;
+
+      if(hasActiveKingInMetamorphia && isForbiddenKingCardTarget){
+        return {...gs, message:"Illegal move: A King tile can't be blocked by a not metamorphing metamorph"};
+      }
+    }
+
+    legal=legalMovesForMetamorph(gs,sFrom);
+  } else {
+    if(mover.color!==next.turn) return gs;
+    legal=legalMovesForPiece(gs,sFrom);
+  }
+
+  if(!legal.some(m=>m.f===to.file&&m.r===to.rank)) return {...gs,message:"Illegal move."};
+  const target=to.occupant; let capturedKing:Color|null=null; if(target&&target.kind==="piece"&&target.type==="K"){ const attackerColor=(mover as any).color as Color; const hasOwnKing=gs.board.some(s=>{const o=s.occupant; return o&&o.kind==="piece"&&o.type==="K"&&o.color===attackerColor}); if(!hasOwnKing) return {...gs,message:"You cannot take the king without your own king on the board."}; const prot=gs.kingProtectedUntil[target.color]; if(prot!==null&&gs.moveNumber===prot) return {...gs,message:"That king is protected this turn."}; }
   if(target&&target.kind==="piece"){ next.quietus[target.color][target.type]++; if(target.type==="K"){ next.kingOnBoard[target.color]=false; capturedKing=target.color } }
   to.occupant=from.occupant; from.occupant=null; next.lastMove={from:fromId,to:toId,by:(mover as any).color};
   if(to.occupant&&to.occupant.kind==="piece"&&to.occupant.mustReturn&&to.rank>=3&&to.rank<=6){ to.occupant.mustReturn=false; (to.occupant as any).returnByTurn=undefined }
