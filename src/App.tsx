@@ -123,7 +123,7 @@ interface GameState {
   moveNumber: number;
   stock: { white: ChrysalisStock; black: ChrysalisStock };
   quietus: { white: ChrysalisStock; black: ChrysalisStock };
-  kingOnBoard: { white: boolean; black: boolean }; // kept for compatibility, but logic uses board scan
+  kingOnBoard: { white: boolean; black: boolean };
   kingProtectedUntil: { white: number | null; black: number | null };
   selected: SquareId | null;
   promotion: { square: SquareId; color: Color } | null;
@@ -309,9 +309,11 @@ function legalMovesForPiece(gs: GameState, from: Square): { f: number; r: number
     case "P": {
       const dir = color === "white" ? -1 : 1;
       const one = r0 + dir;
+      // forward move
       if (inBounds(f0, one) && !gs.board.find((s) => s.file === f0 && s.rank === one)!.occupant) {
         moves.push({ f: f0, r: one });
       }
+      // captures
       for (const df of [-1, 1]) {
         const nf = f0 + df;
         const nr = r0 + dir;
@@ -497,11 +499,10 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
 }
 
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
-  const opp: Color = gs.turn; // side to move
+  const opp: Color = gs.turn;
 
   if (capturedKing) return { winner: lastMover, reason: "king captured" };
 
-  // Checkmate only if opponent actually has a king on the board
   const oppKingSq = findKingSquare(gs, opp);
   if (oppKingSq) {
     const inCheck = isSquareAttacked(gs, oppKingSq.file, oppKingSq.rank, lastMover);
@@ -513,7 +514,6 @@ function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) 
     }
   }
 
-  // "No king + no mobile pawns/metamorphs" uses board-scanned king presence
   for (const c of ["white", "black"] as Color[]) {
     const hasKing = !!findKingSquare(gs, c);
     if (!hasKing) {
@@ -549,8 +549,6 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
   if (mover.kind === "metamorph") {
     if (mover.color !== next.turn) return gs;
 
-    // Special rule: a metamorph cannot step onto a king piece card in Metamorphia
-    // if that player already has an active king piece in Metamorphia.
     const dir = mover.color === "white" ? -1 : 1;
     const expectedRank = sFrom.rank + dir;
     const attemptingStandardStep = sTo.file === sFrom.file && sTo.rank === expectedRank;
@@ -612,7 +610,6 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     }
   }
 
-  // capture
   if (target && target.kind === "piece") {
     next.quietus[target.color][target.type]++;
     if (target.type === "K") {
@@ -621,19 +618,16 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     }
   }
 
-  // move piece/metamorph
   to.occupant = from.occupant;
   from.occupant = null;
 
   next.lastMove = { from: fromId, to: toId, by: (mover as any).color };
 
-  // handle mustReturn pieces that sit in Metamorphia
   if (to.occupant && to.occupant.kind === "piece" && to.occupant.mustReturn && to.rank >= 3 && to.rank <= 6) {
     to.occupant.mustReturn = false;
     (to.occupant as any).returnByTurn = undefined;
   }
 
-  // landing on piece card in Metamorphia (piece)
   if (to.occupant && to.occupant.kind === "piece" && to.rank >= 3 && to.rank <= 6 && to.blueSymbol) {
     const c = to.occupant.color;
     const cur = to.occupant.type;
@@ -653,7 +647,6 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     }
   }
 
-  // landing on piece card in Metamorphia (metamorph)
   if (to.occupant && to.occupant.kind === "metamorph" && to.rank >= 3 && to.rank <= 6 && to.blueSymbol) {
     const c = to.occupant.color;
     const t = to.blueSymbol;
@@ -669,18 +662,15 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     }
   }
 
-  // promotion
   if (to.occupant && to.occupant.kind === "piece" && to.occupant.type === "P") {
     if ((to.occupant.color === "white" && to.rank === 1) || (to.occupant.color === "black" && to.rank === 8)) {
       next.promotion = { square: to.id, color: to.occupant.color };
     }
   }
 
-  // update turn
   next.turn = next.turn === "white" ? "black" : "white";
   next.moveNumber++;
 
-  // handle pieces that must return to Metamorphia by deadline
   for (const sq of next.board) {
     const o = sq.occupant;
     if (o && o.kind === "piece" && o.mustReturn && o.returnByTurn !== undefined) {
@@ -915,11 +905,9 @@ function runSelfTests() {
       console.assert(typeof ch === "string" && ch.length > 0, "glyph");
     });
 
-  // New basic test: initial position repetition map should have exactly one entry with count 1
   const repKeys = Object.keys(g.repetition);
   console.assert(repKeys.length === 1 && g.repetition[repKeys[0]] === 1, "repetition init");
 
-  // Stalemate: empty board, no kings, no moves -> draw
   const empty = initialGame();
   empty.board.forEach((sq) => {
     sq.occupant = null;
@@ -930,7 +918,6 @@ function runSelfTests() {
   const stal = stalemateOutcome(empty);
   console.assert(!!stal && stal!.winner === null, "stalemate kingless should be draw");
 
-  // King detection: only black has a king, no pawns/metamorphs -> black should win
   const kTest = initialGame();
   kTest.board.forEach((sq) => {
     sq.occupant = null;
@@ -977,32 +964,6 @@ function ChrysalisGlyph({
 }
 
 function QuietusRow({
-  label,
-  color,
-  counts,
-  align,
-}: {
-  label: string;
-  color: Color;
-  counts: ChrysalisStock;
-  align?: "left" | "right";
-}) {
-  const order: PieceType[] = ["K", "Q", "R", "B", "N", "P"];
-  return (
-    <div
-      className={`flex ${align === "right" ? "justify-end" : "justify-start"} items-center gap-2 flex-wrap`}
-    >
-      <span className="text-sm mr-2 opacity-80 w-12">{label}</span>
-      {order.flatMap((t) =>
-        Array.from({ length: counts[t] }).map((_, i) => (
-          <ChrysalisGlyph key={`${label}-${t}-${i}`} type={t} color={color} />
-        ))
-      )}
-    </div>
-  );
-}
-
-({
   label,
   color,
   counts,
@@ -1145,13 +1106,6 @@ export default function App() {
     }
   }, []);
 
-  const aiBestPromotion = (st: GameState, c: Color): PieceType => {
-    for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
-      if (promotionAvailable(st, c, t)) return t;
-    }
-    return "Q";
-  };
-
   useEffect(() => {
     if (gs.winner || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
 
@@ -1163,6 +1117,13 @@ export default function App() {
     const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
     return () => window.clearTimeout(id);
   }, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winner]);
+
+  const aiBestPromotion = (st: GameState, c: Color): PieceType => {
+    for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
+      if (promotionAvailable(st, c, t)) return t;
+    }
+    return "Q";
+  };
 
   function prepareDragImage(e: React.DragEvent, occ: Exclude<Occupant, null>) {
     if (!dragGhostRef.current) {
@@ -1307,9 +1268,9 @@ export default function App() {
               </h2>
               <p className="mb-4 opacity-90">
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
-                Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that;
-                the game appeared as a result of just sporadic contemplation. A physical prototype helped
-                substantially in refining the rules.
+                Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
+                game appeared as a result of just sporadic contemplation. A physical prototype helped substantially in
+                refining the rules.
               </p>
 
               <h3 className="text-xl font-semibold mt-4 mb-2">Setup</h3>
@@ -1321,94 +1282,130 @@ export default function App() {
                   <strong>Ranks 1–2 and 7–8:</strong> filled with metamorphs (round tokens).
                 </li>
                 <li>
-                  <strong>Ranks 3–6 — "Metamorphia":</strong> every square displays a piece card — a shuffled layout
-                  of all 32 classical chess pieces (no color division) shown as outlined transparent-fill symbols,
-                  one per square.
+                  <strong>Ranks 3–6 — “Metamorphia”:</strong> every square displays a piece card — a shuffled layout of
+                  all 32 classical chess pieces (no color division) shown as outlined transparent-fill symbols, one per
+                  square.
                 </li>
                 <li>
-                  <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts
-                  of the classical 16 per color) — drawn to transform when stepping on a piece card in Metamorphia
-                  (ranks 3–6) and restored here when a piece changes type.
+                  <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
+                  the classical 16 per color) — drawn to transform when stepping on a piece card in Metamorphia (ranks
+                  3–6) and restored here when a piece changes type.
                 </li>
                 <li>
-                  <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the
-                  first source for promotion choices.
+                  <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
+                  source for promotion choices.
                 </li>
               </ul>
 
               <h3 className="text-xl font-semibold mt-4 mb-2">Pieces</h3>
               <ul className="list-disc pl-6 space-y-2 opacity-90">
                 <li>
-                  <strong>Metamorphs</strong> (round tokens, 16 per player): move 1 square vertically toward the
-                  center; no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3–6) they
-                  transform into that square's piece card if available in the player's Chrysalis and disappear;
-                  otherwise, they remain metamorphs and may keep moving vertically later.
+                  <strong>Metamorphs</strong> (round tokens, 16 per player): Move 1 square vertically toward the center;
+                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3–6) they transform into
+                  that square’s piece card if available in the player's Chrysalis and disappear; otherwise, they remain
+                  metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
+                  reach the last rank.
                 </li>
                 <li>
-                  <strong>Rooks / Bishops / Queen / Knight:</strong> standard chess movement, but confined to ranks
-                  3–6.
+                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to ranks 3–6.
                 </li>
                 <li>
-                  <strong>King:</strong> standard chess movement, but confined to ranks 3–6. A king is immune to
-                  capture on the opponent's immediate next turn after it appears on the board; an enemy king can't
-                  be captured unless one's own king is on the board.
+                  <strong>King:</strong> Standard chess movement, but confined to ranks 3–6. King safety: a king is
+                  immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
+                  can't be captured unless one's own king is on the board.
                 </li>
                 <li>
-                  <strong>Pawns:</strong> standard chess movement and capture. The only pieces except metamorphs
-                  allowed to progress outside Metamorphia (ranks 3–6). On reaching the last rank they promote to any
-                  available piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece
-                  must return to ranks 3–6 on its next turn or it goes to Quietus.
+                  <strong>Pawns:</strong> Standard chess movement and capture. The only pieces except metamorphs allowed
+                  to progress outside Metamorphia (ranks 3–6). On reaching the last rank they promote to any available
+                  piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece must return
+                  to ranks 3–6 according to its classical movement next turn or it goes to Quietus.
                 </li>
               </ul>
 
-              <h3 className="text-xl font-semibold mt-4 mb-2">Key Rules</h3>
+              <h3 className="text-xl font-semibold mt-4 mb-2">Rules</h3>
               <ul className="list-disc pl-6 space-y-2 opacity-90">
                 <li>
-                  <strong>Special anti-block rule for King cards:</strong> if a player has an active King piece in
-                  Metamorphia, it is forbidden for their metamorphs to step onto an unoccupied King piece card in
-                  Metamorphia. Such a move is illegal and will be rejected with the message:
-                  {" "}
-                  <em>
-                    "Illegal move: A King tile can't be blocked by a not metamorphing metamorph".
-                  </em>
+                  <strong>Setting up and starting:</strong> Metamorphs are put on the board. Pieces are ordered in each
+                  player's Chrysalis. The 32 piece cards are shuffled and dealt by the white player on Metamorphia's
+                  ranks 3–6 (order: a6 → h6, a5 → h5, a4 → h4, a3 → h3). White moves first.
                 </li>
                 <li>
-                  <strong>Stalemate rule:</strong> if the side to move has no legal moves and is not in check,
-                  then:
-                  <ul className="list-disc pl-6 space-y-1 mt-1">
-                    <li>If both players have kings, or both have no kings → the result is a draw.</li>
-                    <li>If only one player has a king → that player is the winner (regardless of who forced it).</li>
-                  </ul>
+                  <strong>Metamorphia interactions:</strong> Landing on a piece card instantly transforms the unit into
+                  that piece only if your Chrysalis has one available; otherwise, it stays as-is and will auto-transform
+                  later if it remains on that square and stock appears.
                 </li>
                 <li>
-                  <strong>Threefold repetition rule:</strong> when the same position (board, side to move, king
-                  presence) repeats three times:
-                  <ul className="list-disc pl-6 space-y-1 mt-1">
-                    <li>If both players have kings, or both have no kings → draw by threefold repetition.</li>
-                    <li>If only one player has a king → that player is the winner.</li>
-                  </ul>
+                  <strong>Special rule for not blocking king piece cards by a metamorph:</strong> If a player has an
+                  active king piece in the Metamorphia, it is forbidden for its metamorphs to step on an unoccupied king
+                  piece card. Such a move is illegal and will be rejected with the message: "Illegal move: A King tile
+                  can't be blocked by a not metamorphing metamorph".
                 </li>
                 <li>
-                  <strong>No-king + immobile pawns/metamorphs:</strong> if a player has no king and (no pawns or all
-                  pawns immobile) and (no metamorphs or all metamorphs immobile), the opponent wins.
+                  <strong>Board restrictions:</strong> All real pieces must stay on ranks 3–6; only pawns may enter
+                  outside. Metamorphs move only one square vertically toward the center and never capture or jump.
+                </li>
+                <li>
+                  <strong>Chrysalis (piece supply):</strong> Limited to starting counts (K-1, Q-1, R-2, B-2, N-2, P-8).
+                  When a unit transforms, the new piece is taken from the Chrysalis and the previous piece type is
+                  returned back to the Chrysalis (never exceeding limits).
+                </li>
+                <li>
+                  <strong>Quietus (captures):</strong> Captured pieces go here permanently. Promotion takes the chosen
+                  piece from Quietus first, otherwise from Chrysalis.
+                </li>
+                <li>
+                  <strong>Promotion rule:</strong> On reaching the last rank, a pawn promotes to any available piece in
+                  Quietus or Chrysalis. The promoted piece must return to ranks 3–6 on its very next turn or it goes to
+                  Quietus.
+                </li>
+                <li>
+                  <strong>Edge metamorph rule:</strong> Moving a metamorph 1 → 2 or 8 → 7 does not transform it.
+                </li>
+                <li>
+                  <strong>King safety and capture:</strong> A king is immune to capture on the opponent’s immediate next
+                  turn after it appears. You cannot capture the enemy king if your own king is not on the board.
                 </li>
               </ul>
 
-              <p className="mt-4 opacity-90 text-sm">
-                Classical exceptions: no castling and no en passant in this variant.
+              <h3 className="text-xl font-semibold mt-4 mb-2">Victory conditions</h3>
+              <ol className="list-decimal pl-6 space-y-1 opacity-90">
+                <li>Capturing the king.</li>
+                <li>Checkmate.</li>
+                <li>
+                  Opponent has no king and (no pawns or all pawns immobile) and (no metamorphs or all metamorphs
+                  immobile).
+                </li>
+                <li>
+                  Stalemate when only one player has a king (that player is the winner), regardless of who is forcing the
+                  stalemate.
+                </li>
+                <li>
+                  Threefold repetition when the opponent is kingless (the side with a king wins).
+                </li>
+                <li>50-move rule when the opponent is kingless.</li>
+              </ol>
+
+              <h3 className="text-xl font-semibold mt-4 mb-2">Draw conditions</h3>
+              <ol className="list-decimal pl-6 space-y-1 opacity-90">
+                <li>Stalemate when both players have kings, or both don't have kings.</li>
+                <li>
+                  Threefold repetition when both players are either kingless, or both have kings.
+                </li>
+                <li>50-move rule when both players are either kingless, or kingful.</li>
+                <li>Mutual agreement.</li>
+              </ol>
+
+              <p className="mt-4 opacity-90">
+                <em>Classical exceptions:</em> No castling and no en passant in this variant.
               </p>
               <p className="mt-2 text-sm opacity-70">
-                Feedback:{" "}
-                <a className="underline" href="mailto:kalinyanev@yahoo.com">
-                  kalinyanev@yahoo.com
-                </a>
+                Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Left panel */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
         <StockView stock={whiteStock} color="white" />
@@ -1422,9 +1419,7 @@ export default function App() {
           Turn: <span className="font-bold capitalize">{gs.turn}</span>
         </div>
         {gs.message && (
-          <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded">
-            {gs.message}
-          </div>
+          <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded">{gs.message}</div>
         )}
         <div className="mt-2 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
           <div className="font-semibold text-sm">Computer opponent</div>
@@ -1444,9 +1439,7 @@ export default function App() {
             <select
               className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
               value={gs.ai.cpuPlays}
-              onChange={(e) =>
-                setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })
-              }
+              onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
             >
               <option value="white">White</option>
               <option value="black">Black</option>
@@ -1467,7 +1460,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Board */}
       <div
         className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl"
         style={{ border: "4px solid #3b2f2f" }}
@@ -1518,19 +1510,15 @@ export default function App() {
         )}
       </div>
 
-      {/* Right panel */}
       <div className="flex flex-col gap-3 w-48 shrink-0 items-end">
         <h2 className="text-lg font-semibold">Black chrysalis</h2>
         <StockView stock={blackStock} color="black" align="right" />
       </div>
 
-      {/* Bottom bar: Quietus & results */}
       <div className="fixed left-4 right-4 bottom-4 bg-neutral-800/90 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="font-semibold tracking-wide">Quietus</div>
-          <div className="text-xs opacity-70">
-            Captured pieces · promotions revive from here if available
-          </div>
+          <div className="text-xs opacity-70">Captured pieces · promotions revive from here if available</div>
         </div>
 
         {gs.winner && (
@@ -1545,7 +1533,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Promotion modal */}
       {gs.promotion && (
         <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
           <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[420px] shadow-2xl">
