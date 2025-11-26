@@ -950,12 +950,6 @@ function ChrysalisGlyph({
 }: {
   type: PieceType;
   color: Color;
-})({
-  type,
-  color,
-}: {
-  type: PieceType;
-  color: Color;
 }) {
   const isB = color === "black";
   const fill = isB ? "#111" : "#f7f7f7";
@@ -983,6 +977,32 @@ function ChrysalisGlyph({
 }
 
 function QuietusRow({
+  label,
+  color,
+  counts,
+  align,
+}: {
+  label: string;
+  color: Color;
+  counts: ChrysalisStock;
+  align?: "left" | "right";
+}) {
+  const order: PieceType[] = ["K", "Q", "R", "B", "N", "P"];
+  return (
+    <div
+      className={`flex ${align === "right" ? "justify-end" : "justify-start"} items-center gap-2 flex-wrap`}
+    >
+      <span className="text-sm mr-2 opacity-80 w-12">{label}</span>
+      {order.flatMap((t) =>
+        Array.from({ length: counts[t] }).map((_, i) => (
+          <ChrysalisGlyph key={`${label}-${t}-${i}`} type={t} color={color} />
+        ))
+      )}
+    </div>
+  );
+}
+
+({
   label,
   color,
   counts,
