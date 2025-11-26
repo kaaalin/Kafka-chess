@@ -909,13 +909,17 @@ function runSelfTests() {
     "blue32"
   );
 
-  ["K", "Q", "R", "B", "N", "P"].map((x) => pieceGlyph(x as PieceType)).forEach((ch) => {
-    console.assert(typeof ch === "string" && ch.length > 0, "glyph");
-  });
+  ("KQRBNP" as const)
+    .map((x) => pieceGlyph(x as PieceType))
+    .forEach((ch) => {
+      console.assert(typeof ch === "string" && ch.length > 0, "glyph");
+    });
 
+  // New basic test: initial position repetition map should have exactly one entry with count 1
   const repKeys = Object.keys(g.repetition);
   console.assert(repKeys.length === 1 && g.repetition[repKeys[0]] === 1, "repetition init");
 
+  // Stalemate: empty board, no kings, no moves -> draw
   const empty = initialGame();
   empty.board.forEach((sq) => {
     sq.occupant = null;
@@ -924,8 +928,9 @@ function runSelfTests() {
   empty.kingOnBoard.black = false;
   empty.turn = "white";
   const stal = stalemateOutcome(empty);
-  console.assert(stal && stal.winner === null, "stalemate kingless should be draw");
+  console.assert(!!stal && stal!.winner === null, "stalemate kingless should be draw");
 
+  // King detection: only black has a king, no pawns/metamorphs -> black should win
   const kTest = initialGame();
   kTest.board.forEach((sq) => {
     sq.occupant = null;
@@ -936,10 +941,16 @@ function runSelfTests() {
   }
   kTest.turn = "white";
   const res = detectWin(kTest, "black", null);
-  console.assert(res && res.winner === "black", "king detection when only black has king");
+  console.assert(!!res && res!.winner === "black", "king detection when only black has king");
 }
 
 function ChrysalisGlyph({
+  type,
+  color,
+}: {
+  type: PieceType;
+  color: Color;
+})({
   type,
   color,
 }: {
