@@ -437,11 +437,16 @@ function stalemateOutcome(gs: GameState): { winner: Color | null; reason: string
   const wk = !!findKingSquare(gs, "white");
   const bk = !!findKingSquare(gs, "black");
 
-  if (wk === bk) {
-    return {
-      winner: null,
-      reason: wk ? "stalemate (both players have kings)" : "stalemate (both players are kingless)",
-    };
+  // Stalemate rule:
+  // - If both players have kings → stalemate is a draw.
+  // - If both players are kingless → NOT a stalemate (game continues).
+  // - If exactly one player has a king → that player wins.
+  if (wk && bk) {
+    return { winner: null, reason: "stalemate (both players have kings)" };
+  }
+
+  if (!wk && !bk) {
+    return null;
   }
 
   const winner: Color = wk ? "white" : "black";
@@ -916,7 +921,7 @@ function runSelfTests() {
   empty.kingOnBoard.black = false;
   empty.turn = "white";
   const stal = stalemateOutcome(empty);
-  console.assert(!!stal && stal!.winner === null, "stalemate kingless should be draw");
+  console.assert(stal === null, "no stalemate when both players are kingless");
 
   const kTest = initialGame();
   kTest.board.forEach((sq) => {
