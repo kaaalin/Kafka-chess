@@ -1376,10 +1376,6 @@ export default function App() {
                   immobile).
                 </li>
                 <li>
-                  Stalemate when only one player has a king (that player is the winner), regardless of who is forcing the
-                  stalemate.
-                </li>
-                <li>
                   Threefold repetition when the opponent is kingless (the side with a king wins).
                 </li>
                 <li>50-move rule when the opponent is kingless.</li>
@@ -1387,7 +1383,7 @@ export default function App() {
 
               <h3 className="text-xl font-semibold mt-4 mb-2">Draw conditions</h3>
               <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Stalemate when both players have kings, or both don't have kings.</li>
+                <li>Stalemate when both players have kings.</li>
                 <li>
                   Threefold repetition when both players are either kingless, or both have kings.
                 </li>
