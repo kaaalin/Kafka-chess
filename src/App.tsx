@@ -899,9 +899,9 @@ function runSelfTests() {
     "blue32"
   );
 
-  ("KQRBNP" as const)
-    .map((x) => pieceGlyph(x as PieceType))
-    .forEach((ch) => {
+  (["K", "Q", "R", "B", "N", "P"] as PieceType[])
+    .map((x: PieceType) => pieceGlyph(x))
+    .forEach((ch: string) => {
       console.assert(typeof ch === "string" && ch.length > 0, "glyph");
     });
 
