@@ -503,22 +503,14 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
   return applyAutoTransforms(next).newGs;
 }
 
+// detectWin without checkmate logic
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
-  const opp: Color = gs.turn;
-
+  // Win by capturing the king
   if (capturedKing) return { winner: lastMover, reason: "king captured" };
 
-  const oppKingSq = findKingSquare(gs, opp);
-  if (oppKingSq) {
-    const inCheck = isSquareAttacked(gs, oppKingSq.file, oppKingSq.rank, lastMover);
-    if (inCheck) {
-      const occ = oppKingSq.occupant as any;
-      const kingMoves = legalMovesForPiece(gs, oppKingSq).filter((m) => occ.type === "K");
-      const safe = kingMoves.filter((m) => !isSquareAttacked(gs, m.f, m.r, lastMover));
-      if (!safe.length) return { winner: lastMover, reason: "checkmate" };
-    }
-  }
+  // No checkmate detection here – kings are allowed to move into or remain in check
 
+  // Other win conditions remain unchanged
   for (const c of ["white", "black"] as Color[]) {
     const hasKing = !!findKingSquare(gs, c);
     if (!hasKing) {
@@ -762,6 +754,7 @@ function aiResolvePromotion(state: GameState, color: Color) {
   return state;
 }
 
+// generateMoves without king-in-check filtering
 function generateMoves(gs: GameState, c: Color) {
   const out: { from: SquareId; to: SquareId; next: GameState }[] = [];
   const base = deepClone(gs);
@@ -788,9 +781,8 @@ function generateMoves(gs: GameState, c: Color) {
     }
   }
 
-  const safe = out.filter((mv) => !kingInCheck(mv.next, c));
-  if (kingInCheck(gs, c)) return safe;
-  return safe.length ? safe : out;
+  // No filtering by king safety – kings are allowed to move into or stay in check
+  return out;
 }
 
 function evaluate(gs: GameState, forC: Color) {
