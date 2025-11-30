@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
+// ---------------- Types & Constants ----------------
+
 type FileLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 type RankNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type Color = "white" | "black";
@@ -58,35 +60,7 @@ const woodSquareBg = (f: number, r: number) => {
   return `linear-gradient(135deg, ${shade(base, 8)} 0%, ${base} 55%, ${shade(base, -6)} 100%)`;
 };
 
-// Encode a position for repetition tracking: board layout + side to move + king presence flags
-function encodePosition(gs: GameState) {
-  const cells = gs.board
-    .map((sq) => {
-      const o = sq.occupant;
-      if (!o) return ".";
-      if (o.kind === "metamorph") return o.color === "white" ? "M" : "m";
-      const t = o.type;
-      return o.color === "white" ? t : t.toLowerCase();
-    })
-    .join("");
-
-  const turnChar = gs.turn === "white" ? "w" : "b";
-
-  const wk = gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "piece" && o.type === "K" && o.color === "white";
-  });
-
-  const bk = gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "piece" && o.type === "K" && o.color === "black";
-  });
-
-  const kw = wk ? "1" : "0";
-  const kb = bk ? "1" : "0";
-
-  return `${turnChar}${kw}${kb}|${cells}`;
-}
+// ---------------- Game State ----------------
 
 type Occupant =
   | { kind: "metamorph"; color: Color }
@@ -134,6 +108,38 @@ interface GameState {
   lastMove: { from: SquareId; to: SquareId; by: Color } | null;
   repetition: Record<string, number>;
 }
+
+// Encode a position for repetition tracking: board layout + side to move + king presence flags
+function encodePosition(gs: GameState) {
+  const cells = gs.board
+    .map((sq) => {
+      const o = sq.occupant;
+      if (!o) return ".";
+      if (o.kind === "metamorph") return o.color === "white" ? "M" : "m";
+      const t = o.type;
+      return o.color === "white" ? t : t.toLowerCase();
+    })
+    .join("");
+
+  const turnChar = gs.turn === "white" ? "w" : "b";
+
+  const wk = gs.board.some((sq) => {
+    const o = sq.occupant;
+    return o && o.kind === "piece" && o.type === "K" && o.color === "white";
+  });
+
+  const bk = gs.board.some((sq) => {
+    const o = sq.occupant;
+    return o && o.kind === "piece" && o.type === "K" && o.color === "black";
+  });
+
+  const kw = wk ? "1" : "0";
+  const kb = bk ? "1" : "0";
+
+  return `${turnChar}${kw}${kb}|${cells}`;
+}
+
+// ---------------- Initial Setup ----------------
 
 function createInitialBoard(): Square[] {
   const board: Square[] = [];
@@ -210,6 +216,8 @@ function initialGame(): GameState {
 
   return base;
 }
+
+// ---------------- Move Generation & Rules ----------------
 
 function legalMovesForPiece(gs: GameState, from: Square): { f: number; r: number }[] {
   const occ = from.occupant as Extract<Occupant, { kind: "piece" }>;
@@ -309,11 +317,9 @@ function legalMovesForPiece(gs: GameState, from: Square): { f: number; r: number
     case "P": {
       const dir = color === "white" ? -1 : 1;
       const one = r0 + dir;
-      // forward move
       if (inBounds(f0, one) && !gs.board.find((s) => s.file === f0 && s.rank === one)!.occupant) {
         moves.push({ f: f0, r: one });
       }
-      // captures
       for (const df of [-1, 1]) {
         const nf = f0 + df;
         const nr = r0 + dir;
@@ -437,10 +443,6 @@ function stalemateOutcome(gs: GameState): { winner: Color | null; reason: string
   const wk = !!findKingSquare(gs, "white");
   const bk = !!findKingSquare(gs, "black");
 
-  // Stalemate rule:
-  // - If both players have kings → stalemate is a draw.
-  // - If both players are kingless → NOT a stalemate (game continues).
-  // - If exactly one player has a king → that player wins.
   if (wk && bk) {
     return { winner: null, reason: "stalemate (both players have kings)" };
   }
@@ -505,12 +507,8 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
 
 // detectWin without checkmate logic
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
-  // Win by capturing the king
   if (capturedKing) return { winner: lastMover, reason: "king captured" };
 
-  // No checkmate detection here – kings are allowed to move into or remain in check
-
-  // Other win conditions remain unchanged
   for (const c of ["white", "black"] as Color[]) {
     const hasKing = !!findKingSquare(gs, c);
     if (!hasKing) {
@@ -781,7 +779,6 @@ function generateMoves(gs: GameState, c: Color) {
     }
   }
 
-  // No filtering by king safety – kings are allowed to move into or stay in check
   return out;
 }
 
@@ -883,6 +880,8 @@ function pickAiMove(gs: GameState) {
   return bn;
 }
 
+// ---------------- Self Tests ----------------
+
 function runSelfTests() {
   console.assert(inBounds(0, 1) && inBounds(7, 8) && !inBounds(-1, 5) && !inBounds(8, 3), "inBounds");
 
@@ -927,6 +926,8 @@ function runSelfTests() {
   const res = detectWin(kTest, "black", null);
   console.assert(!!res && res!.winner === "black", "king detection when only black has king");
 }
+
+// ---------------- UI Helpers ----------------
 
 function ChrysalisGlyph({
   type,
@@ -1016,10 +1017,7 @@ function StockView({
 }
 
 const BlueSymbol = ({ type }: { type: PieceType }) => (
-  <svg
-    className="absolute inset-0 w-full h-full pointer-events-none"
-    viewBox="0 0 100 100"
-  >
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
     <text
       x="50"
       y="78"
@@ -1038,10 +1036,7 @@ const BlueSymbol = ({ type }: { type: PieceType }) => (
 const Piece = ({ occ }: { occ: Extract<Occupant, { kind: "piece" }> }) => {
   const color = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
   return (
-    <div
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ zIndex: 2 }}
-    >
+    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
       <div className="w-[80%] h-[80%] flex items-center justify-center" draggable>
         <svg
           viewBox="0 0 100 100"
@@ -1067,10 +1062,7 @@ const Piece = ({ occ }: { occ: Extract<Occupant, { kind: "piece" }> }) => {
 };
 
 const Metamorph = ({ color }: { color: Color }) => (
-  <div
-    className="absolute inset-0 flex items-center justify-center"
-    style={{ zIndex: 1 }}
-  >
+  <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 1 }}>
     <div
       className="w-[72%] h-[72%] rounded-full border border-black/60"
       style={{
@@ -1083,6 +1075,8 @@ const Metamorph = ({ color }: { color: Color }) => (
   </div>
 );
 
+// ---------------- Main App ----------------
+
 export default function App() {
   const [gs, setGs] = useState<GameState>(() => initialGame());
   const dragFrom = useRef<SquareId | null>(null);
@@ -1091,6 +1085,13 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
 
   const newGame = () => setGs(initialGame());
+
+  const aiBestPromotion = (st: GameState, c: Color): PieceType => {
+    for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
+      if (promotionAvailable(st, c, t)) return t;
+    }
+    return "Q";
+  };
 
   useEffect(() => {
     if (!testsOnce.current) {
@@ -1114,13 +1115,6 @@ export default function App() {
     const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
     return () => window.clearTimeout(id);
   }, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winner]);
-
-  const aiBestPromotion = (st: GameState, c: Color): PieceType => {
-    for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
-      if (promotionAvailable(st, c, t)) return t;
-    }
-    return "Q";
-  };
 
   function prepareDragImage(e: React.DragEvent, occ: Exclude<Occupant, null>) {
     if (!dragGhostRef.current) {
@@ -1241,8 +1235,16 @@ export default function App() {
   const whiteStock = gs.stock.white;
   const blackStock = gs.stock.black;
 
+  const sortedSquares = [...gs.board].sort((a, b) => {
+    if (a.rank !== b.rank) return b.rank - a.rank;
+    return a.file - b.file;
+  });
+
+  const lastMove = gs.lastMove;
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row items-start md:items-start justify-center gap-4 bg-neutral-900 p-2 sm:p-4 text-neutral-100">
+      {/* Desktop: rules button fixed top-left */}
       <button
         onClick={() => setShowRules(true)}
         className="hidden md:block fixed top-3 left-4 z-50 text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
@@ -1250,6 +1252,7 @@ export default function App() {
         RULES AND INFORMATION
       </button>
 
+      {/* Rules modal */}
       {showRules && (
         <div
           className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
@@ -1279,34 +1282,283 @@ export default function App() {
                   <strong>Ranks 1–2 and 7–8:</strong> filled with metamorphs (round tokens).
                 </li>
                 <li>
-                  <strong>Ranks 3–6 — “Metamorphia”:</strong> every square displays a piece card — a shuffled layout of
+                  <strong>Ranks 3–6 — "Metamorphia":</strong> every square displays a piece card — a shuffled layout of
                   all 32 classical chess pieces (no color division) shown as outlined transparent-fill symbols, one per
                   square.
                 </li>
                 <li>
-                  <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
-                  the classical 16 per color) — drawn to transform when stepping on a piece card in Metamorphia (ranks
-                  3–6) and restored here when a piece changes type.
+                  <strong>Chrysalis:</strong> an external area with the player's supply of classical pieces, limited to
+                  normal starting counts.
                 </li>
                 <li>
-                  <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
-                  source for promotion choices.
+                  <strong>Quietus:</strong> the permanent graveyard of captured pieces; also the primary source for
+                  promotion.
                 </li>
               </ul>
 
-              <h3 className="text-xl font-semibold mt-4 mb-2">Pieces</h3>
-              <ul className="list-disc pl-6 space-y-2 opacity-90">
+              <h3 className="text-xl font-semibold mt-4 mb-2">Key ideas</h3>
+              <ul className="list-disc pl-6 space-y-1 opacity-90">
                 <li>
-                  <strong>Metamorphs</strong> (round tokens, 16 per player): Move 1 square vertically toward the center;
-                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3–6) they transform into
-                  that square’s piece card if available in the player's Chrysalis and disappear; otherwise, they remain
-                  metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
-                  reach the last rank.
+                  Metamorphs advance toward Metamorphia and may transform into pieces when stepping on a piece card,
+                  consuming that piece from Chrysalis.
                 </li>
                 <li>
-                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to ranks 3–6.
+                  Classical pieces exist only in Metamorphia (ranks 3–6). They cannot leave it except via special
+                  conditions (such as promotion or return), depending on local rules.
                 </li>
                 <li>
-                  <strong>King:</strong> Standard chess movement, but confined to ranks 3–6. King safety: a king is
-                  immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
-                  can't be captured unless one's own king is on the board.
+                  Kings can move into check and remain in check; there is no checkmate condition. The king can be
+                  captured if allowed by the other constraints.
+                </li>
+              </ul>
+
+              <p className="mt-4 text-sm opacity-70">
+                This digital version focuses on experimenting with the dynamics of Metamorphia and transformation while
+                enforcing the resource limits from Chrysalis and Quietus.
+              </p>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowRules(false)}
+                  className="px-4 py-2 rounded-xl bg-neutral-100 text-neutral-900 text-sm font-semibold"
+                >
+                  CLOSE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main content area */}
+      <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-4 mt-10 md:mt-16">
+        {/* Left chrysalis (desktop) */}
+        <div className="hidden md:flex flex-col gap-3 w-56 shrink-0">
+          <h2 className="text-lg font-semibold">White Chrysalis</h2>
+          <StockView stock={whiteStock} color="white" />
+        </div>
+
+        {/* Center: mobile header + board + messages + mobile chrysalis */}
+        <div className="flex-1 flex flex-col items-center gap-3">
+          {/* Mobile: rules + new game + computer opponent */}
+          <div className="md:hidden w-full flex flex-col items-stretch">
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={() => setShowRules(true)}
+                className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
+              >
+                RULES AND INFORMATION
+              </button>
+              <button
+                onClick={newGame}
+                className="px-3 py-1 rounded-2xl bg-neutral-200 text-neutral-900 text-xs font-semibold shadow"
+              >
+                New Game
+              </button>
+            </div>
+
+            <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
+              <div className="font-semibold text-xs">Computer opponent</div>
+              <label className="flex items-center justify-between gap-1 text-xs">
+                <span>Mode</span>
+                <select
+                  className="bg-neutral-900 border border-neutral-600 rounded px-2 py-0.5"
+                  value={gs.ai.mode}
+                  onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
+                >
+                  <option value="human">Human vs Human</option>
+                  <option value="cpu">Human vs Computer</option>
+                </select>
+              </label>
+              <label className="flex items-center justify-between gap-1 text-xs">
+                <span>Computer plays</span>
+                <select
+                  className="bg-neutral-900 border border-neutral-600 rounded px-2 py-0.5"
+                  value={gs.ai.cpuPlays}
+                  onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
+                >
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                </select>
+              </label>
+              <label className="flex items-center justify-between gap-1 text-xs">
+                <span>Level</span>
+                <select
+                  className="bg-neutral-900 border border-neutral-600 rounded px-2 py-0.5"
+                  value={gs.ai.level}
+                  onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
+                >
+                  <option>Easy</option>
+                  <option>Medium</option>
+                  <option>Hard</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {/* Board */}
+          <div className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl">
+            {sortedSquares.map((sq) => {
+              const isSelected = gs.selected === sq.id;
+              const inLastMove =
+                lastMove && (lastMove.from === sq.id || lastMove.to === sq.id);
+
+              return (
+                <div
+                  key={sq.id}
+                  className="relative w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20"
+                  onClick={() => clickMove(sq)}
+                  onDrop={(e) => onDrop(e, sq)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragStart={(e) => onDragStart(e, sq)}
+                  draggable={!!sq.occupant && sq.occupant.color === gs.turn}
+                >
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundImage: woodSquareBg(sq.file, sq.rank),
+                      boxShadow: isSelected
+                        ? "inset 0 0 0 3px rgba(255,255,0,0.7)"
+                        : inLastMove
+                        ? "inset 0 0 0 2px rgba(0,255,255,0.6)"
+                        : "none",
+                    }}
+                  />
+
+                  {sq.blueSymbol && sq.rank >= 3 && sq.rank <= 6 && (
+                    <BlueSymbol type={sq.blueSymbol} />
+                  )}
+
+                  {sq.occupant &&
+                    (sq.occupant.kind === "metamorph" ? (
+                      <Metamorph color={sq.occupant.color} />
+                    ) : (
+                      <Piece occ={sq.occupant} />
+                    ))}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile: message board below board */}
+          {gs.message && (
+            <div className="md:hidden w-full mt-3 px-2">
+              <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-2 rounded">
+                {gs.message}
+              </div>
+            </div>
+          )}
+
+          {/* Mobile: chrysalises under board */}
+          <div className="flex md:hidden w-full gap-3 mt-3">
+            <div className="flex flex-col gap-2 w-1/2">
+              <h2 className="text-sm font-semibold">White Chrysalis</h2>
+              <StockView stock={whiteStock} color="white" />
+            </div>
+
+            <div className="flex flex-col gap-2 w-1/2 items-end">
+              <h2 className="text-sm font-semibold">Black Chrysalis</h2>
+              <StockView stock={blackStock} color="black" align="right" />
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel (desktop): controls + message + black chrysalis */}
+        <div className="hidden md:flex flex-col gap-3 w-56 shrink-0 items-end">
+          <button
+            onClick={newGame}
+            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
+          >
+            New Game
+          </button>
+
+          {gs.message && (
+            <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-2 rounded w-full text-right">
+              {gs.message}
+            </div>
+          )}
+
+          <div className="mt-2 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2 w-full">
+            <div className="font-semibold text-sm text-right">Computer opponent</div>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Mode</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.mode}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
+              >
+                <option value="human">Human vs Human</option>
+                <option value="cpu">Human vs Computer</option>
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Computer plays</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.cpuPlays}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
+              >
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Level</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.level}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
+              >
+                <option>Easy</option>
+                <option>Medium</option>
+                <option>Hard</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full items-end mt-2">
+            <h2 className="text-lg font-semibold">Black Chrysalis</h2>
+            <StockView stock={blackStock} color="black" align="right" />
+          </div>
+        </div>
+      </div>
+
+      {/* Promotion overlay */}
+      {gs.promotion && (
+        <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-4 w-80 text-center">
+            <div className="mb-3 font-semibold text-lg">Choose promotion</div>
+            <div className="flex justify-center gap-3 mb-3">
+              {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handlePromotion(t)}
+                  className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-600 flex items-center justify-center text-2xl"
+                >
+                  {pieceGlyph(t)}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs opacity-70">
+              Promotion pieces are taken from Quietus first, then from Chrysalis.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quietus bar over everything */}
+      <div className="fixed left-2 right-2 bottom-2 sm:left-4 sm:right-4 sm:bottom-4 bg-neutral-800/90 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-40">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center text-xs uppercase tracking-wide text-neutral-300">
+            <span>Quietus (Captured pieces)</span>
+            <span>
+              Turn {gs.moveNumber} · {gs.turn.toUpperCase()} to move
+            </span>
+          </div>
+          <QuietusRow label="White" color="white" counts={gs.quietus.white} align="left" />
+          <QuietusRow label="Black" color="black" counts={gs.quietus.black} align="right" />
+        </div>
+      </div>
+    </div>
+  );
+}
