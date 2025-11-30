@@ -925,6 +925,10 @@ function runSelfTests() {
   kTest.turn = "white";
   const res = detectWin(kTest, "black", null);
   console.assert(!!res && res!.winner === "black", "king detection when only black has king");
+
+  // Extra sanity: promotionAvailable should be false for K and P
+  console.assert(!promotionAvailable(g, "white", "K"), "no promotion to king");
+  console.assert(!promotionAvailable(g, "white", "P"), "no promotion to pawn");
 }
 
 // ---------------- UI Helpers ----------------
@@ -1083,6 +1087,7 @@ export default function App() {
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
+  const [viewFrom, setViewFrom] = useState<Color>("white");
 
   const newGame = () => setGs(initialGame());
 
@@ -1236,8 +1241,13 @@ export default function App() {
   const blackStock = gs.stock.black;
 
   const sortedSquares = [...gs.board].sort((a, b) => {
-    if (a.rank !== b.rank) return b.rank - a.rank;
-    return a.file - b.file;
+    if (a.rank !== b.rank) {
+      // When viewing from white, we want white's side at the bottom, so lower ranks at the top.
+      // When viewing from black, invert the rank order.
+      return viewFrom === "white" ? a.rank - b.rank : b.rank - a.rank;
+    }
+    // For a full 180° flip, also mirror files when viewing from black.
+    return viewFrom === "white" ? a.file - b.file : b.file - a.file;
   });
 
   const lastMove = gs.lastMove;
@@ -1336,13 +1346,68 @@ export default function App() {
         <div className="hidden md:flex flex-col gap-3 w-56 shrink-0">
           <h2 className="text-lg font-semibold">White Chrysalis</h2>
           <StockView stock={whiteStock} color="white" />
+
+          {/* Desktop: controls below white chrysalis */}
+          <div className="w-full flex justify-end gap-2 mt-4">
+            <button
+              onClick={newGame}
+              className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
+            >
+              New Game
+            </button>
+            <button
+              onClick={() => setViewFrom((prev) => (prev === "white" ? "black" : "white"))}
+              className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow"
+            >
+              Flip board
+            </button>
+          </div>
+
+          {/* Desktop: computer opponent under controls */}
+          <div className="mt-2 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2 w-full">
+            <div className="font-semibold text-sm">Computer opponent</div>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Mode</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.mode}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
+              >
+                <option value="human">Human vs Human</option>
+                <option value="cpu">Human vs Computer</option>
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Computer plays</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.cpuPlays}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
+              >
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-2 text-sm">
+              <span>Level</span>
+              <select
+                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+                value={gs.ai.level}
+                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
+              >
+                <option>Easy</option>
+                <option>Medium</option>
+                <option>Hard</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         {/* Center: mobile header + board + messages + mobile chrysalis */}
         <div className="flex-1 flex flex-col items-center gap-3">
           {/* Mobile: rules + new game + computer opponent */}
           <div className="md:hidden w-full flex flex-col items-stretch">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between gap-2 mb-2">
               <button
                 onClick={() => setShowRules(true)}
                 className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
@@ -1354,6 +1419,12 @@ export default function App() {
                 className="px-3 py-1 rounded-2xl bg-neutral-200 text-neutral-900 text-xs font-semibold shadow"
               >
                 New Game
+              </button>
+              <button
+                onClick={() => setViewFrom((prev) => (prev === "white" ? "black" : "white"))}
+                className="px-3 py-1 rounded-2xl bg-neutral-700 text-neutral-100 text-xs font-semibold shadow"
+              >
+                Flip board
               </button>
             </div>
 
@@ -1463,58 +1534,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right panel (desktop): controls + message + black chrysalis */}
+        {/* Right panel (desktop): message + black chrysalis */}
         <div className="hidden md:flex flex-col gap-3 w-56 shrink-0 items-end">
-          <button
-            onClick={newGame}
-            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
-          >
-            New Game
-          </button>
-
           {gs.message && (
             <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-2 rounded w-full text-right">
               {gs.message}
             </div>
           )}
-
-          <div className="mt-2 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2 w-full">
-            <div className="font-semibold text-sm text-right">Computer opponent</div>
-            <label className="flex items-center justify-between gap-2 text-sm">
-              <span>Mode</span>
-              <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
-                value={gs.ai.mode}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
-              >
-                <option value="human">Human vs Human</option>
-                <option value="cpu">Human vs Computer</option>
-              </select>
-            </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
-              <span>Computer plays</span>
-              <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
-                value={gs.ai.cpuPlays}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
-              >
-                <option value="white">White</option>
-                <option value="black">Black</option>
-              </select>
-            </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
-              <span>Level</span>
-              <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
-                value={gs.ai.level}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
-              >
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-              </select>
-            </label>
-          </div>
 
           <div className="flex flex-col gap-3 w-full items-end mt-2">
             <h2 className="text-lg font-semibold">Black Chrysalis</h2>
