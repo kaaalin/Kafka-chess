@@ -1306,7 +1306,7 @@ export default function App() {
                 </li>
                 <li>
                   <strong>Pawns:</strong> Standard chess movement and capture. The only pieces except metamorphs allowed
-                  to progress outside Metamorphia (ranks 3–6). On reaching the last rank they promote to any available
+                  to progress outside Metamorphia (outside ranks 3–6). On reaching the last rank they promote to any available
                   piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece must return
                   to ranks 3–6 according to its classical movement next turn or it goes to Quietus.
                 </li>
@@ -1327,8 +1327,7 @@ export default function App() {
                 <li>
                   <strong>Special rule for not blocking king piece cards by a metamorph:</strong> If a player has an
                   active king piece in the Metamorphia, it is forbidden for its metamorphs to step on an unoccupied king
-                  piece card. Such a move is illegal and will be rejected with the message: "Illegal move: A King tile
-                  can't be blocked by a not metamorphing metamorph".
+                  piece card. Such a move is illegal and will be rejected as illegal.
                 </li>
                 <li>
                   <strong>Board restrictions:</strong> All real pieces must stay on ranks 3–6; only pawns may enter
