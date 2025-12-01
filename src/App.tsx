@@ -1383,7 +1383,7 @@ export default function App() {
               </ol>
 
               <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> No castling, no en passant, no checkmate and a king can be taken (i.e. move/stay into check) in this variant.
+                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained below.
               </p>
               <p className="mt-2 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
