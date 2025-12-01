@@ -1278,8 +1278,8 @@ export default function App() {
                 </li>
                 <li>
                   <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
-                  the classical 16 per color) — drawn to transform when stepping on a piece card in Metamorphia (ranks
-                  3–6) and restored here when a piece changes type.
+                  the classical 16 per color/player) — drawn to transform when stepping on a piece card in Metamorphia (ranks
+                  3–6) and restored back there when that piece changes type into another.
                 </li>
                 <li>
                   <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
@@ -1292,7 +1292,7 @@ export default function App() {
                 <li>
                   <strong>Metamorphs</strong> (round tokens, 16 per player): Move 1 square vertically toward the center;
                   no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3–6) they transform into
-                  that square’s piece card if available in the player's Chrysalis and disappear; otherwise, they remain
+                  that square’s piece card if available in the player's Chrysalis and permanently disappear; otherwise, they remain
                   metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
                   reach the last rank.
                 </li>
@@ -1300,7 +1300,7 @@ export default function App() {
                   <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to ranks 3–6.
                 </li>
                 <li>
-                  <strong>King:</strong> Standard chess movement, but confined to ranks 3–6. King safety: a king is
+                  <strong>King:</strong> Standard chess movement, but confined to ranks 3–6. *King safety: a king is
                   immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
                   can't be captured unless one's own king is on the board.
                 </li>
@@ -1316,18 +1316,18 @@ export default function App() {
               <ul className="list-disc pl-6 space-y-2 opacity-90">
                 <li>
                   <strong>Setting up and starting:</strong> Metamorphs are put on the board. Pieces are ordered in each
-                  player's Chrysalis. The 32 piece cards are shuffled and dealt by the white player on Metamorphia's
+                  player's Chrysalis. The 32 piece cards are shuffled and - if ina physical game setting - dealt by the white player on Metamorphia's
                   ranks 3–6 (order: a6 → h6, a5 → h5, a4 → h4, a3 → h3). White moves first.
                 </li>
                 <li>
                   <strong>Metamorphia interactions:</strong> Landing on a piece card instantly transforms the unit into
                   that piece only if your Chrysalis has one available; otherwise, it stays as-is and will auto-transform
-                  later if it remains on that square and stock appears.
+                  later if it remains on that square and needed stock appears.
                 </li>
                 <li>
                   <strong>Special rule for not blocking king piece cards by a metamorph:</strong> If a player has an
                   active king piece in the Metamorphia, it is forbidden for its metamorphs to step on an unoccupied king
-                  piece card. Such a move is illegal and will be rejected as illegal.
+                  piece card. Such a move is illegal and will be rejected.
                 </li>
                 <li>
                   <strong>Board restrictions:</strong> All real pieces must stay on ranks 3–6; only pawns may enter
