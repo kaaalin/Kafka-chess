@@ -309,11 +309,9 @@ function legalMovesForPiece(gs: GameState, from: Square): { f: number; r: number
     case "P": {
       const dir = color === "white" ? -1 : 1;
       const one = r0 + dir;
-      // forward move
       if (inBounds(f0, one) && !gs.board.find((s) => s.file === f0 && s.rank === one)!.occupant) {
         moves.push({ f: f0, r: one });
       }
-      // captures
       for (const df of [-1, 1]) {
         const nf = f0 + df;
         const nr = r0 + dir;
@@ -437,10 +435,6 @@ function stalemateOutcome(gs: GameState): { winner: Color | null; reason: string
   const wk = !!findKingSquare(gs, "white");
   const bk = !!findKingSquare(gs, "black");
 
-  // Stalemate rule:
-  // - If both players have kings → stalemate is a draw.
-  // - If both players are kingless → NOT a stalemate (game continues).
-  // - If exactly one player has a king → that player wins.
   if (wk && bk) {
     return { winner: null, reason: "stalemate (both players have kings)" };
   }
@@ -503,14 +497,9 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
   return applyAutoTransforms(next).newGs;
 }
 
-// detectWin without checkmate logic
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
-  // Win by capturing the king
   if (capturedKing) return { winner: lastMover, reason: "king captured" };
 
-  // No checkmate detection here – kings are allowed to move into or remain in check
-
-  // Other win conditions remain unchanged
   for (const c of ["white", "black"] as Color[]) {
     const hasKing = !!findKingSquare(gs, c);
     if (!hasKing) {
@@ -754,7 +743,6 @@ function aiResolvePromotion(state: GameState, color: Color) {
   return state;
 }
 
-// generateMoves without king-in-check filtering
 function generateMoves(gs: GameState, c: Color) {
   const out: { from: SquareId; to: SquareId; next: GameState }[] = [];
   const base = deepClone(gs);
@@ -781,7 +769,6 @@ function generateMoves(gs: GameState, c: Color) {
     }
   }
 
-  // No filtering by king safety – kings are allowed to move into or stay in check
   return out;
 }
 
@@ -1089,6 +1076,7 @@ export default function App() {
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
+  const [flipped, setFlipped] = useState(false);
 
   const newGame = () => setGs(initialGame());
 
@@ -1146,7 +1134,9 @@ export default function App() {
 
     if (occ.kind === "piece") {
       const c = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
-      ghost.innerHTML = `<svg viewBox="0 0 100 100" width="64" height="64" style="filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))"><text x="50" y="70" text-anchor="middle" font-size="92" fill="${c}" stroke="${c}" stroke-width="1" font-family="'Noto Chess','DejaVu Sans',serif">${GLYPH[(occ as Extract<Occupant, { kind: "piece" }>).type]}</text></svg>`;
+      ghost.innerHTML = `<svg viewBox="0 0 100 100" width="64" height="64" style="filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))"><text x="50" y="70" text-anchor="middle" font-size="92" fill="${c}" stroke="${c}" stroke-width="1" font-family="'Noto Chess','DejaVu Sans',serif">${
+        GLYPH[(occ as Extract<Occupant, { kind: "piece" }>).type]
+      }</text></svg>`;
     } else {
       const fill =
         occ.color === "white"
@@ -1240,6 +1230,9 @@ export default function App() {
 
   const whiteStock = gs.stock.white;
   const blackStock = gs.stock.black;
+
+  const rankOrder = flipped ? [...RANKS].slice().reverse() : RANKS;
+  const fileOrder = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
 
   return (
     <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
@@ -1402,12 +1395,20 @@ export default function App() {
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
         <StockView stock={whiteStock} color="white" />
-        <button
-          onClick={newGame}
-          className="mt-2 px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
-        >
-          New Game
-        </button>
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={newGame}
+            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
+          >
+            New Game
+          </button>
+          <button
+            onClick={() => setFlipped((f) => !f)}
+            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow"
+          >
+            Flip Sides
+          </button>
+        </div>
         <div className="text-sm opacity-80">
           Turn: <span className="font-bold capitalize">{gs.turn}</span>
         </div>
@@ -1457,8 +1458,8 @@ export default function App() {
         className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl"
         style={{ border: "4px solid #3b2f2f" }}
       >
-        {RANKS.map((r) =>
-          FILES.map((_, f) => {
+        {rankOrder.map((r) =>
+          fileOrder.map((f) => {
             const sq = gs.board.find((s) => s.file === f && s.rank === r)!;
             const isSel = gs.selected === sq.id;
             const lm = gs.lastMove;
