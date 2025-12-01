@@ -1359,20 +1359,22 @@ export default function App() {
               <h3 className="text-xl font-semibold mt-4 mb-2">Victory conditions</h3>
               <ol className="list-decimal pl-6 space-y-1 opacity-90">
                 <li>Capturing the king.</li>
-                <li>Checkmate.</li>
                 <li>
                   Opponent has no king and (no pawns or all pawns immobile) and (no metamorphs or all metamorphs
                   immobile).
                 </li>
                 <li>
+                Metamorphic stalemate (a sole king is blocked by opposite metamorphs and/or own pieces which are blocked by opposite metamorphs) while the opposite player is kingless.
+                </li>
+                <li>
                   Threefold repetition when the opponent is kingless (the side with a king wins).
                 </li>
-                <li>50-move rule when the opponent is kingless.</li>
+                <li>50-move rule when the opponent is kingless. (The metamorphs have the same status as pawns regarding the rule - any move by a metamorph resents the count.)</li>
               </ol>
 
               <h3 className="text-xl font-semibold mt-4 mb-2">Draw conditions</h3>
               <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Stalemate when both players have kings.</li>
+                <li>Metamorphic stalemate (both opponents are kingful, one of the kings is blocked by opposite metamorphs and/or by own pieces which are blocked by opposite metamorphs). </li>
                 <li>
                   Threefold repetition when both players are either kingless, or both have kings.
                 </li>
@@ -1381,7 +1383,7 @@ export default function App() {
               </ol>
 
               <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> No castling and no en passant in this variant.
+                <em>Classical exceptions:</em> No castling, no en passant, no checkmate and a king can be taken (i.e. move/stay into check) in this variant.
               </p>
               <p className="mt-2 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
