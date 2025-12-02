@@ -1404,7 +1404,7 @@ export default function App() {
       </div>
 
         {/* Quietus – mobile only, fixed at bottom */}
-        <div className="fixed opacity-90 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
+        <div className="fixed opacity-95 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
           <div className="flex items-center justify-between">
             <div className="font-semibold tracking-wide">Quietus</div>
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
@@ -1412,7 +1412,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-3 scale-60">
+          <div className="mt-2 grid grid-cols-2 gap-3 scale-30">
             <QuietusRow label="White" color="white" counts={gs.quietus.white} />
             <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} />
           </div>
@@ -1421,7 +1421,7 @@ export default function App() {
         {/* End-of-game banner above Quietus on mobile */}
         {gs.winner && (
           <div className="fixed inset-x-0 bottom-24 flex justify-center z-40 px-4">
-            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/25 border border-emerald-400/70 text-emerald-50 text-sm sm:text-base text-center shadow-lg">
+            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/25 border border-white-400/70 text-white-50 text-sm sm:text-base text-center shadow-lg">
               <span>Winner: </span>
               <span className="capitalize font-semibold">{gs.winner}</span>
               {gs.winReason && <span> · {gs.winReason}</span>}
