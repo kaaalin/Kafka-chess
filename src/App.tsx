@@ -1565,8 +1565,7 @@ export default function App() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+                  )}
 
         {/* Promotion modal */}
         {gs.promotion && (
