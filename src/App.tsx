@@ -1425,7 +1425,7 @@ export default function App() {
         {/* End-of-game banner above Quietus on mobile */}
         {gs.winner && (
           <div className="fixed inset-x-0 bottom-24 flex justify-center z-40 px-4">
-            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/25 border border-emerald-400/70 text-emerald-50 text-sm sm:text-base text-center shadow-lg">
+            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/80 border border-emerald-400/70 text-emerald-50 text-sm sm:text-base text-center shadow-lg">
               <span>Winner: </span>
               <span className="capitalize font-semibold">{gs.winner}</span>
               {gs.winReason && <span> · {gs.winReason}</span>}
