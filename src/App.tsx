@@ -1385,7 +1385,7 @@ export default function App() {
         </div>
 
         {/* Row 5: Two chrysalises side by side */}
-      <div className="mt-4 flex flex-row gap-4 justify-center">
+      <div className="mt-7 flex flex-row gap-4 justify-center">
         <div className="flex-1 min-w-[120px] max-w-xs">
           <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
