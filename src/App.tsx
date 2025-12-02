@@ -1297,7 +1297,7 @@ export default function App() {
         </div>
 
         {/* Row 4: Board */}
-        <div className="flex justify-center mt-0">
+        <div className="flex justify-center mt-4">
           <div
             className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full max-w-[min(90vw,40rem)]"
             style={{ border: "4px solid #3b2f2f" }}
