@@ -1249,8 +1249,8 @@ export default function App() {
          
         </div>
   {/* Row 2: message */}
-          <div className="flex justify-center mb-2">   
- <div className="flex-1 flex justify-end">
+          <div className="flex items-center justify-between gap-2 mb-2">   
+ <div className="flex-1 flex justify-left">
             {gs.message && (
               <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right">
                 {gs.message}
