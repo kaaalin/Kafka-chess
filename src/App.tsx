@@ -576,7 +576,7 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
   }
 
   if (!legal.some((m) => m.f === to.file && m.r === to.rank)) {
-    return { ...gs, message: "Illegal move." };
+    return { ...gs, message: "Illegal move" };
   }
 
   // King-protection + "no-king-no-capture" rule before capture
@@ -588,7 +588,7 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
   if (!attackerHasKing) {
     return {
       ...gs,
-      message: "Illegal move: you cannot capture a king while you have no king.",
+      message: "Illegal move: you cannot capture a king while you have no king",
     };
   }
 
@@ -1248,7 +1248,7 @@ export default function App() {
         </div>
           <div className="flex-1 flex justify-end">
             {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded border border-yellow-500/50 text-right">
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white-500/20 text-white-200 px-2 py-1 rounded border border-white-500/50 text-right">
                 {gs.message}
               </div>
             )}
