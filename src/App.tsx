@@ -558,7 +558,7 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
       if (hasActiveKingInMetamorphia && isForbiddenKingCardTarget) {
         return {
           ...gs,
-          message: "Illegal move: king blocking by a metamorph",
+          message: "The second king can't be blocked by a metamorph",
         };
       }
     }
@@ -570,7 +570,7 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
   }
 
   if (!legal.some((m) => m.f === to.file && m.r === to.rank)) {
-    return { ...gs, message: "Illegal move." };
+    return { ...gs, message: "Illegal move" };
   }
 
   const target = to.occupant;
@@ -586,13 +586,13 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     if (!hasOwnKing) {
       return {
         ...gs,
-        message: "You cannot take the king without your own king on the board.",
+        message: "You cannot take the king without your own king on the board",
       };
     }
 
     const prot = gs.kingProtectedUntil[target.color];
     if (prot !== null && gs.moveNumber === prot) {
-      return { ...gs, message: "That king is protected this turn." };
+      return { ...gs, message: "That king is protected this turn" };
     }
   }
 
