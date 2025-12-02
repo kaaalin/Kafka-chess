@@ -1428,10 +1428,6 @@ export default function App() {
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
             onClick={() => setShowRules(false)}
           >
-            <div
-              className="max-h-[85vh] w-full max-w-3xl overflow-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
               <div className="bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6">
                 <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
                   Kafka Chess — Rules &amp; Information
