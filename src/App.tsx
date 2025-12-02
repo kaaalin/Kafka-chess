@@ -1330,7 +1330,7 @@ export default function App() {
         </div>
 
         {/* Row 4: Board */}
-        <div className="flex justify-center mt-0.5">
+        <div className="flex justify-center mt-0">
           <div
             className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full max-w-[min(90vw,40rem)]"
             style={{ border: "4px solid #3b2f2f" }}
@@ -1387,15 +1387,15 @@ export default function App() {
         {/* Row 5: Two chrysalises side by side */}
       <div className="mt-4 flex flex-row gap-4 justify-center">
         <div className="flex-1 min-w-[120px] max-w-xs">
-          <h2 className="text-lg font-semibold mb-2 text-center">White chrysalis</h2>
+          <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
-          <div className="scale-75 origin-top">
+          <div className="scale-60 origin-top">
             <StockView stock={whiteStock} color="white" />
           </div>
         </div>
 
         <div className="flex-1 min-w-[120px] max-w-xs">
-          <h2 className="text-lg font-semibold mb-2 text-center">Black chrysalis</h2>
+          <h2 className="text-sm font-semibold mb-1 text-center">Black chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
           <div className="scale-60 origin-top">
             <StockView stock={blackStock} color="black" align="right" />
