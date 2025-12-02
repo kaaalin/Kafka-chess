@@ -1297,7 +1297,7 @@ export default function App() {
         </div>
 
         {/* Row 4: Board */}
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-0">
           <div
             className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full max-w-[min(90vw,40rem)]"
             style={{ border: "4px solid #3b2f2f" }}
@@ -1350,10 +1350,10 @@ export default function App() {
             )}
           </div>
         </div>
-  <div className="flex items-center justify-between gap-2 mb-4">   
+  <div className="flex items-center justify-between gap-2 mt-4">   
  <div className="flex-1 flex justify-left">
             {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right">
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right rounded">
                 {gs.message}
               </div>
             )}
