@@ -1284,7 +1284,7 @@ export default function App() {
              
 
         {/* Row 3: Computer opponent box */}
-        <div className="flex justify-center mb-3">
+        <div className="flex justify-center mb-2">
           <div className="w-full max-w-md p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <div className="font-semibold">Computer opponent</div>
