@@ -1142,15 +1142,32 @@ export default function App() {
     setGs((prev) => performMove(prev, fromId, sq.id));
   };
 
-  const clickMove = (sq: Square) => {
-    if (gs.winner || (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays)) return;
-    if (!gs.selected) {
-      if (!sq.occupant || sq.occupant.color !== gs.turn) return;
-      setGs({ ...gs, selected: sq.id });
-      return;
-    }
-    setGs(performMove(gs, gs.selected as SquareId, sq.id));
-  };
+ const clickMove = (sq: Square) => {
+  if (gs.winner || (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays)) return;
+
+  // Nothing selected yet → try to select a piece
+  if (!gs.selected) {
+    if (!sq.occupant || sq.occupant.color !== gs.turn) return;
+    setGs({ ...gs, selected: sq.id });
+    return;
+  }
+
+  // Second click on the same square → cancel selection
+  if (gs.selected === sq.id) {
+    setGs({ ...gs, selected: null, message: null }); // optional: clear message too
+    return;
+  }
+
+  // Optional UX: clicking another of your own pieces changes the selection instead of moving
+  if (sq.occupant && sq.occupant.color === gs.turn) {
+    setGs({ ...gs, selected: sq.id });
+    return;
+  }
+
+  // Otherwise, try to move from previously selected square to this square
+  setGs(performMove(gs, gs.selected as SquareId, sq.id));
+};
+
 
   const handlePromotion = (t: PieceType) => {
     if (!gs.promotion) return;
