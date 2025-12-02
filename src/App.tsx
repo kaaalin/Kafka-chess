@@ -1248,7 +1248,7 @@ export default function App() {
         </div>
           <div className="flex-1 flex justify-end">
             {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-black-500/20 text-[#4F7942] px-2 py-1 rounded text-right">
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-black-500/20 text-[#4D0F0C0] px-2 py-1 rounded text-right">
                 {gs.message}
               </div>
             )}
