@@ -1405,7 +1405,14 @@ export default function App() {
           </div>
         </div>
       </div>
-
+ {/* Quietus – mobile only, fixed at bottom */}
+        <div className="fixed left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
+          <div className="flex items-center justify-between">
+            <div className="font-semibold tracking-wide">Quietus</div>
+            <div className="text-[11px] sm:text-xs opacity-70 text-right">
+              Captured pieces · promotions revive from here if available
+            </div>
+          </div>
 
         {/* Rules modal */}
         {showRules && (
