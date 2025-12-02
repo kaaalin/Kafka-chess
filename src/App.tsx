@@ -1256,7 +1256,7 @@ export default function App() {
             onClick={() => setShowRules(true)}
             className="text-xs sm:text-sm font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
           >
-            Rules and information
+            Info
           </button>
           <div className="flex justify-center gap-2 mb-2">
           <button
@@ -1422,16 +1422,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* End-of-game banner above Quietus on mobile */}
-        {gs.winner && (
-          <div className="fixed inset-x-0 bottom-24 flex justify-center z-40 px-4">
-            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/80 border border-emerald-400/70 text-emerald-50 text-sm sm:text-base text-center shadow-lg">
-              <span>Winner: </span>
-              <span className="capitalize font-semibold">{gs.winner}</span>
-              {gs.winReason && <span> · {gs.winReason}</span>}
-            </div>
-          </div>
-        )}
 
         {/* Rules modal */}
         {showRules && (
