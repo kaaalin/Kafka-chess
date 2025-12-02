@@ -1406,15 +1406,15 @@ export default function App() {
         {/* Quietus – mobile only, fixed at bottom */}
         <div className="fixed opacity-95 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
           <div className="flex items-center justify-between">
-            <div className="font-semibold tracking-wide">Quietus</div>
+            <div className="font-semibold tracking-wide" text-sm>Quietus</div>
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
               Captured pieces · promotions revive from here first if available
             </div>
           </div>
 
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <QuietusRow label="White" color="white" counts={gs.quietus.white} scale-30 />
-            <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} />
+            <QuietusRow label="White" color="white" counts={gs.quietus.white} text-sm/>
+            <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} text-sm/>
           </div>
         </div>
 
