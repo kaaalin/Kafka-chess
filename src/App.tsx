@@ -1258,17 +1258,7 @@ export default function App() {
           >
             Rules and information
           </button>
-          <div className="flex-1 flex justify-end">
-            {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded border border-yellow-500/50 text-right">
-                {gs.message}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Row 2: New Game + Flip Board */}
-        <div className="flex justify-center gap-2 mb-2">
+          <div className="flex justify-center gap-2 mb-2">
           <button
             onClick={newGame}
             className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow text-sm sm:text-base"
@@ -1282,6 +1272,16 @@ export default function App() {
             Flip Board
           </button>
         </div>
+          <div className="flex-1 flex justify-end">
+            {gs.message && (
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded border border-yellow-500/50 text-right">
+                {gs.message}
+              </div>
+            )}
+          </div>
+        </div>
+
+             
 
         {/* Row 3: Computer opponent box */}
         <div className="flex justify-center mb-3">
