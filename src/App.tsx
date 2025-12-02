@@ -1404,7 +1404,7 @@ export default function App() {
       </div>
 
         {/* Quietus – mobile only, fixed at bottom */}
-        <div className="fixed opacity-70 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
+        <div className="fixed opacity-90 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
           <div className="flex items-center justify-between">
             <div className="font-semibold tracking-wide">Quietus</div>
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
@@ -1412,7 +1412,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-3">
+          <div className="mt-2 grid grid-cols-2 gap-3 scale-60">
             <QuietusRow label="White" color="white" counts={gs.quietus.white} />
             <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} />
           </div>
