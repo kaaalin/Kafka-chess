@@ -1249,15 +1249,7 @@ export default function App() {
          
         </div>
   {/* Row 2: message */}
-          <div className="flex items-center justify-between gap-2 mb-2">   
- <div className="flex-1 flex justify-left">
-            {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right">
-                {gs.message}
-              </div>
-            )}
-          </div>
-          </div>
+        
         {/* Row 3: Computer opponent box */}
         <div className="flex justify-center mb-2">
           <div className="w-full max-w-md p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
@@ -1358,7 +1350,15 @@ export default function App() {
             )}
           </div>
         </div>
-
+  <div className="flex items-center justify-between gap-2 mb-4">   
+ <div className="flex-1 flex justify-left">
+            {gs.message && (
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right">
+                {gs.message}
+              </div>
+            )}
+          </div>
+          </div>
         {/* Row 5: Two chrysalises side by side */}
       <div className="mt-4 flex flex-row gap-4 justify-center">
         <div className="flex-1 min-w-[120px] max-w-xs">
