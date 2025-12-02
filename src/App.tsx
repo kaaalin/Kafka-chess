@@ -579,15 +579,26 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
     return { ...gs, message: "Illegal move." };
   }
 
-  // King-protection check before capture
-  let capturedKing: Color | null = null;
-  if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") {
-    const target = sTo.occupant;
-    const prot = gs.kingProtectedUntil[target.color];
-    if (prot !== null && gs.moveNumber === prot) {
-      return { ...gs, message: "That king is protected this turn." };
-    }
+  // King-protection + "no-king-no-capture" rule before capture
+let capturedKing: Color | null = null;
+if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") {
+  // NEW: attacker must have a king on the board to capture a king
+  const attackerColor = (mover as any).color as Color;
+  const attackerHasKing = !!findKingSquare(gs, attackerColor);
+  if (!attackerHasKing) {
+    return {
+      ...gs,
+      message: "Illegal move: you cannot capture a king while you have no king.",
+    };
   }
+
+  // Existing one-turn king protection
+  const target = sTo.occupant;
+  const prot = gs.kingProtectedUntil[target.color];
+  if (prot !== null && gs.moveNumber === prot) {
+    return { ...gs, message: "That king is protected this turn." };
+  }
+}
 
   if (sTo.occupant && sTo.occupant.kind === "piece") {
     next.quietus[sTo.occupant.color][sTo.occupant.type]++;
