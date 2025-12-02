@@ -1413,8 +1413,12 @@ export default function App() {
           </div>
 
           <div className="mt-2 grid grid-cols-2 gap-3 text-[13px]">
+            <div className="scale-50 origin-top">
             <QuietusRow label="White" color="white" counts={gs.quietus.white}/>
+            </div>
+            <div className="scale-50 origin-top">
             <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black}/>
+            </div>
           </div>
         </div>
 
