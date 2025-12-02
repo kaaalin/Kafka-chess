@@ -1412,7 +1412,7 @@ export default function App() {
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
               Captured pieces · promotions revive from here if available
             </div>
-          </div>
+       
 
         {/* Rules modal */}
         {showRules && (
