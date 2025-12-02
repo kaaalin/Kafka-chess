@@ -1228,27 +1228,27 @@ export default function App() {
         <div className="flex items-center justify-between gap-2 mb-2">
           <button
             onClick={() => setShowRules(true)}
-            className="text-sm sm:text-base font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
+            className="text-[11px] sm:text-base font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
           >
             INFO
           </button>
           <div className="flex justify-center gap-2 mb-2">
           <button
             onClick={newGame}
-            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow text-sm sm:text-base"
+            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow text-[11px] sm:text-base"
           >
             New Game
           </button>
           <button
             onClick={() => setFlipped((f) => !f)}
-            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow text-sm sm:text-base"
+            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow text-[11px] sm:text-base"
           >
             Flip Board
           </button>
         </div>
           <div className="flex-1 flex justify-end">
             {gs.message && (
-              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 rounded text-right">
+              <div className="max-w-xs sm:max-w-md text-[11px] sm:text-xs bg-white text-black px-2 py-1 text-right">
                 {gs.message}
               </div>
             )}
