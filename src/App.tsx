@@ -1385,16 +1385,23 @@ export default function App() {
         </div>
 
         {/* Row 5: Two chrysalises side by side */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
-          <div className="flex-1 min-w-[150px] max-w-xs mx-auto sm:mx-0">
-            <h2 className="text-lg font-semibold mb-2 text-center sm:text-left">White chrysalis</h2>
+      <div className="mt-4 flex flex-row gap-4 justify-center">
+        <div className="flex-1 min-w-[120px] max-w-xs">
+          <h2 className="text-lg font-semibold mb-2 text-center">White chrysalis</h2>
+          {/* Smaller pieces on mobile via scale */}
+          <div className="scale-75 origin-top">
             <StockView stock={whiteStock} color="white" />
           </div>
-          <div className="flex-1 min-w-[150px] max-w-xs mx-auto sm:mx-0">
-            <h2 className="text-lg font-semibold mb-2 text-center sm:text-right">Black chrysalis</h2>
+        </div>
+
+        <div className="flex-1 min-w-[120px] max-w-xs">
+          <h2 className="text-lg font-semibold mb-2 text-center">Black chrysalis</h2>
+          {/* Smaller pieces on mobile via scale */}
+          <div className="scale-60 origin-top">
             <StockView stock={blackStock} color="black" align="right" />
           </div>
         </div>
+      </div>
 
         {/* Quietus – mobile only, fixed at bottom */}
         <div className="fixed left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
