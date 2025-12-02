@@ -1254,9 +1254,9 @@ export default function App() {
         <div className="flex items-center justify-between gap-2 mb-2">
           <button
             onClick={() => setShowRules(true)}
-            className="text-xs sm:text-sm font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
+            className="text-xs sm:text-base font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
           >
-            Info
+            INFO
           </button>
           <div className="flex justify-center gap-2 mb-2">
           <button
