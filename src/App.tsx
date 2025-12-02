@@ -1408,11 +1408,11 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div className="font-semibold tracking-wide text-[14px]">Quietus</div>
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
-              Captured pieces · promotions revive from here first if available
+              Captured pieces
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+          <div className="mt-2 grid grid-cols-2 gap-3 text-[13px]">
             <QuietusRow label="White" color="white" counts={gs.quietus.white}/>
             <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black}/>
           </div>
