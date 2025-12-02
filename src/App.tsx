@@ -686,6 +686,7 @@ function generateMoves(gs: GameState, c: Color) {
   const out: { from: SquareId; to: SquareId; next: GameState }[] = [];
   const base = deepClone(gs);
   base.turn = c;
+  const startMoveNumber = base.moveNumber;
 
   for (const sq of base.board) {
     const o = sq.occupant;
@@ -695,21 +696,27 @@ function generateMoves(gs: GameState, c: Color) {
       const moves = legalMovesForMetamorph(base, sq);
       for (const m of moves) {
         const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        if (!n2.message) out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
+        const n2 =
+          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
+        // Ignore illegal/no-op moves (moveNumber doesn't advance), but keep winning/check moves.
+        if (n2.moveNumber === startMoveNumber) continue;
+        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
       }
     } else if (o.kind === "piece" && o.color === c) {
       const moves = legalMovesForPiece(base, sq);
       for (const m of moves) {
         const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        if (!n2.message) out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
+        const n2 =
+          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
+        if (n2.moveNumber === startMoveNumber) continue;
+        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
       }
     }
   }
 
   return out;
 }
+
 
 function evaluate(gs: GameState, forC: Color) {
   if (gs.winner) return gs.winner === forC ? 1e9 : -1e9;
