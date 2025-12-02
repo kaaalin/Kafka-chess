@@ -1385,42 +1385,27 @@ export default function App() {
         </div>
 
         {/* Row 5: Two chrysalises side by side */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
-          <div className="flex-1 min-w-[150px] max-w-xs mx-auto sm:mx-0">
-            <h2 className="text-lg font-semibold mb-2 text-center sm:text-left">White chrysalis</h2>
+        
+
+      {/* Row 5: Two chrysalises side by side under the board (mobile only) */}
+      <div className="mt-4 flex flex-row gap-4 justify-center">
+        <div className="flex-1 min-w-[120px] max-w-xs">
+          <h2 className="text-lg font-semibold mb-2 text-center">White chrysalis</h2>
+          {/* Smaller pieces on mobile via scale */}
+          <div className="scale-75 origin-top">
             <StockView stock={whiteStock} color="white" />
           </div>
-          <div className="flex-1 min-w-[150px] max-w-xs mx-auto sm:mx-0">
-            <h2 className="text-lg font-semibold mb-2 text-center sm:text-right">Black chrysalis</h2>
+        </div>
+
+        <div className="flex-1 min-w-[120px] max-w-xs">
+          <h2 className="text-lg font-semibold mb-2 text-center">Black chrysalis</h2>
+          {/* Smaller pieces on mobile via scale */}
+          <div className="scale-75 origin-top">
             <StockView stock={blackStock} color="black" align="right" />
           </div>
         </div>
+      </div>
 
-        {/* Quietus – mobile only, fixed at bottom */}
-        <div className="fixed left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
-          <div className="flex items-center justify-between">
-            <div className="font-semibold tracking-wide">Quietus</div>
-            <div className="text-[11px] sm:text-xs opacity-70 text-right">
-              Captured pieces · promotions revive from here if available
-            </div>
-          </div>
-
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <QuietusRow label="White" color="white" counts={gs.quietus.white} />
-            <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} />
-          </div>
-        </div>
-
-        {/* End-of-game banner above Quietus on mobile */}
-        {gs.winner && (
-          <div className="fixed inset-x-0 bottom-24 flex justify-center z-40 px-4">
-            <div className="w-full max-w-md px-3 py-2 rounded-xl bg-emerald-600/25 border border-emerald-400/70 text-emerald-50 text-sm sm:text-base text-center shadow-lg">
-              <span>Winner: </span>
-              <span className="capitalize font-semibold">{gs.winner}</span>
-              {gs.winReason && <span> · {gs.winReason}</span>}
-            </div>
-          </div>
-        )}
 
         {/* Rules modal */}
         {showRules && (
