@@ -1415,8 +1415,7 @@ export default function App() {
               <p className="mb-4 opacity-90">
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
-                game appeared as a result of just sporadic contemplation. A physical prototype helped substantially in
-                refining the rules.
+                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
               </p>
 
               <h3 className="text-xl font-semibold mt-4 mb-2">Setup</h3>
@@ -1425,17 +1424,16 @@ export default function App() {
                   <strong>Board:</strong> 8×8 classical.
                 </li>
                 <li>
-                  <strong>Ranks 1–2 and 7–8:</strong> filled with metamorphs (round tokens).
+                  <strong>Ranks 1-2 and 7-8:</strong> filled with metamorphs (round tokens).
                 </li>
                 <li>
-                  <strong>Ranks 3–6 — “Metamorphia”:</strong> every square displays a piece card — a shuffled layout of
-                  all 32 classical chess pieces (no color division) shown as outlined transparent-fill symbols, one per
-                  square.
+                  <strong>Ranks 3-6 - 'Metamorphia':</strong> every square displays a piece card - a shuffled layout of
+                  all 32 classical chess pieces (no color division), one per square.
                 </li>
                 <li>
                   <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
-                  the classical 16 per color/player) — drawn to transform when stepping on a piece card in Metamorphia (ranks
-                  3–6) and restored back there when that piece changes type into another.
+                  the classical 16 per color/player) - drawn to transform when stepping on a piece card in Metamorphia (ranks
+                  3–6); and restored back there when that piece changes type into another.
                 </li>
                 <li>
                   <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
@@ -1446,23 +1444,23 @@ export default function App() {
               <h3 className="text-xl font-semibold mt-4 mb-2">Pieces</h3>
               <ul className="list-disc pl-6 space-y-2 opacity-90">
                 <li>
-                  <strong>Metamorphs</strong> (round tokens, 16 per player): Move 1 square vertically toward the center;
-                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3–6) they transform into
-                  that square’s piece card if available in the player's Chrysalis and permanently disappear; otherwise, they remain
+                  <strong>Metamorphs</strong> (16 per player): Move 1 square vertically toward the center;
+                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3-6) they transform into
+                  that square’s piece card if available in the player's Chrysalis, and permanently disappear; otherwise, they remain
                   metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
                   reach the last rank.
                 </li>
                 <li>
-                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to ranks 3–6.
+                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to Metamorphia (ranks 3-6).
                 </li>
                 <li>
-                  <strong>King:</strong> Standard chess movement, but confined to ranks 3–6. *King safety: a king is
+                  <strong>King:</strong> Standard chess movement, but confined to Metamorphia. *King safety: a king is
                   immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
                   can't be captured unless one's own king is on the board.
                 </li>
                 <li>
                   <strong>Pawns:</strong> Standard chess movement and capture. The only pieces except metamorphs allowed
-                  to progress outside Metamorphia (outside ranks 3–6). On reaching the last rank they promote to any available
+                  to progress outside Metamorphia (outside ranks 3-6). On reaching the last rank they promote to any available
                   piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece must return
                   to ranks 3–6 according to its classical movement next turn or it goes to Quietus.
                 </li>
@@ -1472,7 +1470,7 @@ export default function App() {
               <ul className="list-disc pl-6 space-y-2 opacity-90">
                 <li>
                   <strong>Setting up and starting:</strong> Metamorphs are put on the board. Pieces are ordered in each
-                  player's Chrysalis. The 32 piece cards are shuffled and - if ina physical game setting - dealt by the white player on Metamorphia's
+                  player's Chrysalis. The 32 piece cards are shuffled and - if in a physical game setting - dealt by the white player on Metamorphia's
                   ranks 3–6 (order: a6 → h6, a5 → h5, a4 → h4, a3 → h3). White moves first.
                 </li>
                 <li>
@@ -1486,13 +1484,13 @@ export default function App() {
                   piece card. Such a move is illegal and will be rejected.
                 </li>
                 <li>
-                  <strong>Board restrictions:</strong> All real pieces must stay on ranks 3–6; only pawns may enter
+                  <strong>Board restrictions:</strong> All real pieces must stay on ranks 3-6; only pawns may enter
                   outside. Metamorphs move only one square vertically toward the center and never capture or jump.
                 </li>
                 <li>
                   <strong>Chrysalis (piece supply):</strong> Limited to starting counts (K-1, Q-1, R-2, B-2, N-2, P-8).
                   When a unit transforms, the new piece is taken from the Chrysalis and the previous piece type is
-                  returned back to the Chrysalis (never exceeding limits).
+                  returned back to the Chrysalis.
                 </li>
                 <li>
                   <strong>Quietus (captures):</strong> Captured pieces go here permanently. Promotion takes the chosen
@@ -1500,8 +1498,8 @@ export default function App() {
                 </li>
                 <li>
                   <strong>Promotion rule:</strong> On reaching the last rank, a pawn promotes to any available piece in
-                  Quietus or Chrysalis. The promoted piece must return to ranks 3–6 on its very next turn or it goes to
-                  Quietus.
+                  Quietus or Chrysalis oher than King. The promoted piece must return to Metamorphia (ranks 3-6) on its very next turn or it goes to
+                  Quietus. If both player's Chrysalis and Quietus are empty, the pawn does not transform; since it can't return to Metamorphia, on the next turn it is taken to Quietus.
                 </li>
                 <li>
                   <strong>Edge metamorph rule:</strong> Moving a metamorph 1 → 2 or 8 → 7 does not transform it.
