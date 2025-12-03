@@ -1642,7 +1642,7 @@ export default function App() {
         onClick={() => setShowRules(true)}
         className="fixed top-3 left-4 z-50 text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
       >
-        Rules and information
+RULES AND INFORMATION
       </button>
 
       {/* Left panel: white chrysalis + controls */}
