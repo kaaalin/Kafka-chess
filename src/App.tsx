@@ -1610,7 +1610,6 @@ export default function App() {
           </label>
         </div>
       </div> 
-        )}
         {/* Promotion modal */}
         {gs.promotion && (
           <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
