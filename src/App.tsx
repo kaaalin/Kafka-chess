@@ -1378,7 +1378,7 @@ export default function App() {
         <div className="flex-1 min-w-[120px] max-w-xs">
           <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.45] origin-top">
+          <div className="scale-[0.85] origin-top">
             <StockView stock={whiteStock} color="white" />
           </div>
         </div>
@@ -1386,7 +1386,7 @@ export default function App() {
         <div className="flex-1 min-w-[120px] max-w-xs">
           <h2 className="text-sm font-semibold mb-1 text-center">Black chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.45] origin-top">
+          <div className="scale-[0.85] origin-top">
             <StockView stock={blackStock} color="black" align="right" />
           </div>
         </div>
