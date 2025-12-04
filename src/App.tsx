@@ -1368,7 +1368,7 @@ export default function App() {
       className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
         ${
           gs.message
-            ? "bg-white text-black border-neutral-700"
+            ? "bg-white opacity-80 text-black border-neutral-700"
             : "bg-neutral-800 text-neutral-300 border-neutral-700"
         }`}
       disabled
@@ -1376,7 +1376,7 @@ export default function App() {
     
 
       {/* LINE 2 — GAME MESSAGE (Illegal move, Check, Winner, etc.) */}
-      <div className="text-[11px] sm:text-xs">{gs.message} → Turn: <b><span className="font-bold capitalize"> {gs.turn}</span></b>
+      <div className="text-[11px] sm:text-xs">{gs.message} (Turn: <b><span className="font-bold capitalize"> {gs.turn}</span></b>)
         
       </div>
     </button>
