@@ -1034,7 +1034,11 @@ export default function App() {
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
-  const [isMobile, setIsMobile] = useState(true);
+ const [isMobile, setIsMobile] = useState(() => {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < 768;
+});
+
 
   const newGame = () => setGs(initialGame());
 
