@@ -564,7 +564,7 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
       if (hasActiveKingInMetamorphia && isForbiddenKingCardTarget) {
         return {
           ...gs,
-          message: "Illegal move: king blocking by a metamorph",
+          message: "Illegal move: king blocked by a metamorph",
         };
       }
     }
