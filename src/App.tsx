@@ -1364,20 +1364,30 @@ export default function App() {
             )}
           </div>
         </div>
-         <div className="flex justify-center mt-2">
-          <div className="w-full max-w-[min(90vw,40rem)]">
-            <button
-              className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
-                ${gs.message
-                  ? "bg-yellow-400 text-black border-yellow-500"
-                  : "bg-neutral-800 text-neutral-400 border-neutral-700"
-                }`}
-              disabled
-            >
-              {gs.message || "Ready for your move"}
-            </button>
-          </div>
-        </div>
+         {/* Fixed message bar under the board */}
+<div className="flex justify-center mt-2">
+  <div className="w-full max-w-[min(90vw,40rem)]">
+    <button
+      className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
+        ${
+          gs.message
+            ? "bg-yellow-400 text-black border-yellow-500"
+            : "bg-neutral-800 text-neutral-300 border-neutral-700"
+        }`}
+      disabled
+    >
+      {/* LINE 1 — TURN INFO */}
+      <div className="font-semibold">
+        Turn: <span className="capitalize">{gs.turn}</span>
+      </div>
+
+      {/* LINE 2 — GAME MESSAGE (Illegal move, Check, Winner, etc.) */}
+      <div className="text-[11px] sm:text-xs">Turn: <span className="capitalize">{gs.turn} || 
+        {gs.message || " / Ready for your move"}
+      </div>
+    </button>
+  </div>
+</div>
         {/* Row 5: Two chrysalises side by side */}
       <div className="mt-1 flex flex-row gap-4 justify-center">
         <div className="flex-1 min-w-[120px] max-w-xs justify-left">
