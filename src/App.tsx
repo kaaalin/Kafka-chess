@@ -1237,7 +1237,11 @@ export default function App() {
             INFO
           </button>
           <div className="flex justify-center gap-2 mb-2">
-          <button
+         
+            <a href="https://www.buymeacoffee.com/kalinyanev"><img src="https://img.buymeacoffee.com/button-api/?text=Buy Kalin a coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Bree&outline_colour=ffffff&coffee_colour=FFDD00" /></a>
+
+
+            <button
             onClick={newGame}
             className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow text-[11px] sm:text-base"
           >
