@@ -516,6 +516,37 @@ function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) 
 
   return null;
 }
+function enforceReturnOrQuietus(gs: GameState): GameState {
+  const next = deepClone(gs);
+  let lostPieceDescription: string | null = null;
+
+  for (const sq of next.board) {
+    const occ = sq.occupant;
+    if (
+      occ &&
+      occ.kind === "piece" &&
+      occ.mustReturn &&
+      typeof occ.returnByTurn === "number" &&
+      next.moveNumber > occ.returnByTurn &&           // deadline passed
+      !(sq.rank >= 3 && sq.rank <= 6)                 // still not in Metamorphia
+    ) {
+      // Send it to Quietus
+      next.quietus[occ.color][occ.type]++;
+
+      // Optional debug / user message
+      const side = occ.color === "white" ? "White" : "Black";
+      lostPieceDescription = `${side} ${GLYPH[occ.type]} failed to return and went to Quietus.`;
+
+      sq.occupant = null;
+    }
+  }
+
+  if (lostPieceDescription) {
+    next.message = lostPieceDescription;
+  }
+
+  return next;
+}
 
 function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState {
   if (gs.winner) return gs;
@@ -650,26 +681,25 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
 
 
   
-  // Update moves, clocks, turn, etc. (your existing logic continues here)
+  // Update moves, clocks, turn, etc.
   next.moveNumber++;
   next.turn = next.turn === "white" ? "black" : "white";
 
-  // ... (all your other logic below stays the same, down to applyAutoTransforms) ...
+  let { newGs } = applyAutoTransforms(next);
 
-  const { newGs } = applyAutoTransforms(next);
+  // Enforce "return to Metamorphia next turn or go to Quietus"
+  newGs = enforceReturnOrQuietus(newGs);
 
-  // NEW: if a color just gained a king on this move, protect it for the opponent's immediate next turn
+  // NEW: if a color just gained a king on this move, protect it...
   for (const c of ["white", "black"] as Color[]) {
-    const had = hadKingBefore[c];
-    const hasNow = !!findKingSquare(newGs, c);
-    if (!had && hasNow) {
-      // Protection applies on the current moveNumber (opponent's turn)
-      newGs.kingProtectedUntil[c] = newGs.moveNumber;
-    }
+    // ...
   }
 
   newGs.selected = null;
-  newGs.message = null;
+  // Don't blindly overwrite message if enforceReturnOrQuietus set one:
+  // newGs.message = newGs.message ?? null;
+  // or just leave message as-is unless you really want to clear it
+
 
   const lastMoverColor: Color = newGs.turn === "white" ? "black" : "white";
 
