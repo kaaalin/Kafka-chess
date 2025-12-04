@@ -1376,10 +1376,7 @@ export default function App() {
         }`}
       disabled
     >
-      {/* LINE 1 — TURN INFO */}
-      <div className="font-semibold">
-        Turn: <span className="capitalize">{gs.turn}</span>
-      </div>
+    
 
       {/* LINE 2 — GAME MESSAGE (Illegal move, Check, Winner, etc.) */}
       <div className="text-[11px] sm:text-xs">Turn: <span className="capitalize">{gs.turn} || 
