@@ -1374,7 +1374,7 @@ export default function App() {
           </div>
           </div>
         {/* Row 5: Two chrysalises side by side */}
-      <div className="mt-4 flex flex-row gap-4 justify-center">
+      <div className="mt-2 flex flex-row gap-4 justify-center">
         <div className="flex-1 min-w-[120px] max-w-xs justify-left">
           <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
@@ -1393,7 +1393,7 @@ export default function App() {
       </div>
 
         {/* Quietus – mobile only, fixed at bottom */}
-        <div className="mt-4 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
+        <div className="mt-2 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
           <div className="flex items-center justify-between">
             <div className="font-semibold tracking-wide text-[14px]">Quietus</div>
             <div className="text-[11px] sm:text-xs opacity-70 text-right">
