@@ -1238,7 +1238,11 @@ export default function App() {
           </button>
           <div className="flex justify-center gap-2 mb-2">
          
-            <a href="https://www.buymeacoffee.com/kalinyanev"><img src="https://img.buymeacoffee.com/button-api/?text=Buy Kalin a coffee&emoji=☕&slug=kalinyanev&button_colour=#171717&font_colour=ffffff&font_family=Bree&outline_colour=ffffff&coffee_colour=[#83b2be]" /></a>
+<a href="https://www.buymeacoffee.com/kalinyanev">
+  <img
+    src="https://img.buymeacoffee.com/button-api/?text=Buy%20Kalin%20a%20coffee&emoji=%E2%98%95&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=Bree&outline_colour=ffffff&coffee_colour=83b2be"
+  />
+</a>
 
 
             <button
