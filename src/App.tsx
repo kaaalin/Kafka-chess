@@ -1645,26 +1645,28 @@ export default function App() {
   <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
     {/* Top-left: rules + info + BuyMeACoffee (desktop) */}
     <div className="fixed top-3 left-4 z-50 flex flex-col items-start gap-1">
-      <button
-        onClick={() => setShowRules(true)}
-        className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
-      >
-        rules + info
-      </button>
+      {/* Top-left: rules + info */}
+<button
+  onClick={() => setShowRules(true)}
+  className="fixed top-3 left-4 z-50 text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
+>
+  rules + info
+</button>
 
-      {/* BuyMeACoffee link, no extra button/border wrapper */}
-      <a
-        href="https://www.buymeacoffee.com/kalinyanev"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <img
-          src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=83b2be&coffee_colour=83b2be"
-          className="h-8 w-auto"
-          alt="Buy the authors a coffee"
-        />
-      </a>
-    </div>
+{/* Top-right: BuyMeACoffee */}
+<div className="fixed top-3 right-4 z-50">
+  <a
+    href="https://www.buymeacoffee.com/kalinyanev"
+    target="_blank"
+    rel="noreferrer"
+  >
+    <img
+      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
+      className="h-8 w-auto"
+      alt="Buy the authors a coffee"
+    />
+  </a>
+</div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
