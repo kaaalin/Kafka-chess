@@ -1232,7 +1232,6 @@ export default function App() {
           >
             INFO
           </button>
-          <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="kalinyanev" data-color="#83b2be" data-emoji=""  data-font="Lato" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#FFDD00" ></script>
           <div className="flex justify-center gap-2 mb-2">
           <button
             onClick={newGame}
