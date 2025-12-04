@@ -1266,7 +1266,7 @@ export default function App() {
         
         {/* Row 3: Computer opponent box */}
         <div className="flex justify-center mb-2">
-          <div className="w-full max-w-md p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
+          <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
             <div className="flex items-center justify-between text-sm">
               <div className="font-semibold">Computer opponent</div>
               <div className="opacity-80">
@@ -1313,7 +1313,7 @@ export default function App() {
         {/* Row 4: Board */}
         <div className="flex justify-center mt-0">
           <div
-            className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full max-w-[min(90vw,40rem)]"
+            className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full"
             style={{ border: "4px solid #3b2f2f" }}
           >
             {rankOrder.map((r) =>
