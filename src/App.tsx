@@ -638,6 +638,18 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
     }
   }
 
+  // Pawn promotion: if a pawn just reached the last rank, open promotion panel
+  if (
+    to.occupant &&
+    to.occupant.kind === "piece" &&
+    to.occupant.type === "P" &&
+    (to.rank === 1 || to.rank === 8)
+  ) {
+    next.promotion = { square: to.id, color: to.occupant.color };
+  }
+
+
+  
   // Update moves, clocks, turn, etc. (your existing logic continues here)
   next.moveNumber++;
   next.turn = next.turn === "white" ? "black" : "white";
