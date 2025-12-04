@@ -1368,7 +1368,7 @@ export default function App() {
       className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
         ${
           gs.message
-            ? "bg-white opacity-80 text-black border-neutral-700"
+            ? "bg-[#83b2be] text-black border-neutral-700"
             : "bg-neutral-800 text-neutral-300 border-neutral-700"
         }`}
       disabled
