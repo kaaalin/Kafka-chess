@@ -1375,18 +1375,18 @@ export default function App() {
           </div>
         {/* Row 5: Two chrysalises side by side */}
       <div className="mt-4 flex flex-row gap-4 justify-center">
-        <div className="flex-1 min-w-[120px] max-w-xs">
+        <div className="flex-1 min-w-[120px] max-w-xs justify-left">
           <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.85] origin-top">
+          <div className="scale-[0.75] origin-top">
             <StockView stock={whiteStock} color="white" />
           </div>
         </div>
 
-        <div className="flex-1 min-w-[120px] max-w-xs">
+        <div className="flex-1 min-w-[120px] max-w-xs justify-right">
           <h2 className="text-sm font-semibold mb-1 text-center">Black chrysalis</h2>
           {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.85] origin-top">
+          <div className="scale-[0.75] origin-top">
             <StockView stock={blackStock} color="black" align="right" />
           </div>
         </div>
