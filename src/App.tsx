@@ -564,6 +564,8 @@ function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState
   if (!mover) return gs;
 
   const next = deepClone(gs);
+  next.message = null;
+
   const from = next.board.find((s) => s.id === fromId)!;
   const to = next.board.find((s) => s.id === toId)!;
 
