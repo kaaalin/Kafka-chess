@@ -1240,10 +1240,10 @@ export default function App() {
          
 <a
   href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-2 border-white rounded-lg p-[3px]"
+  className="inline-block border-1 border-white rounded-lg p-[3px]"
 >
   <img
-    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=poppins&outline_colour=ffffff&coffee_colour=83b2be"
+    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
     className="block"
   />
 </a>
