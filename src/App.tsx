@@ -1238,15 +1238,13 @@ export default function App() {
           </button>
           <div className="flex justify-center gap-2 mb-2">
          
-<a href="https://www.buymeacoffee.com/kalinyanev" style="
-  display:inline-block;
-  border:2px solid #ffffff;
-  border-radius:10px;
-  padding:6px;
-">
+<a
+  href="https://www.buymeacoffee.com/kalinyanev"
+  className="inline-block border-2 border-white rounded-lg p-[3px]"
+>
   <img
-    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=%E2%98%95&slug=kalinyanev&button_colour=00000000&font_colour=ffffff&font_family=poppins&outline_colour=ffffff&coffee_colour=83b2be"
-    style="display:block;"
+    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=poppins&outline_colour=ffffff&coffee_colour=83b2be"
+    className="block"
   />
 </a>
 
