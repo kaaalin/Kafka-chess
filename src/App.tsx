@@ -1380,7 +1380,7 @@ export default function App() {
 
       {/* LINE 2 — GAME MESSAGE (Illegal move, Check, Winner, etc.) */}
       <div className="text-[11px] sm:text-xs">Turn: <span className="capitalize">{gs.turn} || 
-        {gs.message || " / Ready for your move"}
+        {gs.message || " / Ready for your move"}</span>
       </div>
     </button>
   </div>
