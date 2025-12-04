@@ -1236,14 +1236,12 @@ export default function App() {
           >
             INFO
           </button>
-          <div className="flex justify-center gap-2 mb-2">
-         
-<a
+   <a
   href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-[0.5px] border-white rounded-lg p-[5x]"
+  className="inline-block border-[0.5px] border-white rounded-lg p-[3px]"
 >
   <img
-    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=Inter&outline_colour=ffffff&coffee_colour=83b2be"
+    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
     className="block mx-auto"
   />
 </a>
@@ -1260,7 +1258,7 @@ export default function App() {
           >
             Flip Board
           </button>
-        </div>
+      
          
         </div>
   {/* Row 2: message */}
