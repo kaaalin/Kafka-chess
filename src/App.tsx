@@ -692,9 +692,20 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
   // Enforce "return to Metamorphia next turn or go to Quietus"
   newGs = enforceReturnOrQuietus(newGs);
 
-  // NEW: if a color just gained a king on this move, protect it...
+  // NEW: if a color just gained a king on this move, give it one-turn immunity
   for (const c of ["white", "black"] as Color[]) {
-    // ...
+    const hadBefore = hadKingBefore[c];
+    const hasNow = !!findKingSquare(newGs, c);
+    
+    // king appeared this move → protect it on opponent's upcoming turn
+    if (!hadBefore && hasNow) {
+      newGs.kingProtectedUntil[c] = newGs.moveNumber;
+    }
+
+    // optional: if a side has no king at all, clear any stale protection flag
+    if (!hasNow) {
+      newGs.kingProtectedUntil[c] = null;
+    }
   }
 
   newGs.selected = null;
