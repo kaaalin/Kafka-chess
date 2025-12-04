@@ -1255,7 +1255,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setFlipped((f) => !f)}
-            className="px-3 py-2 rounded-2xl bg-neutral-800/80 text-neutral-100 font-semibold shadow text-[11px] sm:text-base"
+            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow text-[11px] sm:text-base"
           >
             Flip Board
           </button>
