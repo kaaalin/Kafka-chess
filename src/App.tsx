@@ -1334,7 +1334,7 @@ export default function App() {
           </button>
   <a
   href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-[0.5px] border-white rounded-lg px-2"
+  className="inline-block border-[0.5px] bg-[#000000] border-white rounded-2xl px-2"
   target="_blank"
   rel="noreferrer"
 >
@@ -1352,8 +1352,8 @@ export default function App() {
   {(coffeeImgFailed || isIosSafari) && (
    <span
   className="
-    block text-[10px] sm:text-xs text-center font-Poppins
-    px-3 py-2 rounded-2xl bg-[#171717] text-white font-bold text-[13px]
+    block sm:text-xs text-center font-Poppins
+    px-3 py-2 rounded-2xl bg-[#000000] text-white font-bold text-[13px]
   "
 >
   Buy the authors a coffee ☕
