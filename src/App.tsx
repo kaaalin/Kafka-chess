@@ -1320,13 +1320,13 @@ export default function App() {
           >
             INFO
           </button>
-   <a
+  <a
   href="https://www.buymeacoffee.com/kalinyanev"
   className="inline-block border-[0.5px] border-white rounded-lg p-[3px]"
   target="_blank"
   rel="noreferrer"
 >
-  {/* Image only when it loads successfully */}
+  {/* Show image if it loads OK */}
   {!coffeeImgFailed && (
     <img
       src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
@@ -1336,9 +1336,9 @@ export default function App() {
     />
   )}
 
-  {/* Fallback text if image fails (ONLY then) */}
+  {/* Fallback text only if image fails */}
   {coffeeImgFailed && (
-    <span className="text-xs text-white block mx-auto">
+    <span className="block text-[10px] sm:text-xs text-white text-center px-1">
       Buy the authors a coffee ☕
     </span>
   )}
