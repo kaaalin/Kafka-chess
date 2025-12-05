@@ -1698,14 +1698,9 @@ export default function App() {
         rules + info
       </button>
 
-      <a
-        href="https://www.buymeacoffee.com/kalinyanev"
-        target="_blank"
-        rel="noreferrer"
-        className="px-4 py-2 rounded-2xl bg-neutral-800/90 border border-neutral-700 text-xs font-semibold text-neutral-100 shadow-lg hover:bg-neutral-700 hover:translate-y-[1px] transition"
-      >
-        Buy the authors a coffee ☕
-      </a>
+ <a
+   href="https://www.buymeacoffee.com/kalinyanev" className="inline-block border-[0.5px] border-white rounded-lg p-[3px]" target="_blank" >
+   <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be" className="block mx-auto" /> </a>
     </div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
