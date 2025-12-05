@@ -1691,18 +1691,11 @@ export default function App() {
   <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
 
     {/* Fixed top-left controls: rules + BuyMeACoffee */}
-    {/* OLD BLOCK REMOVED */}
+    
 
     <div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start">
       {/* Buy Me a Coffee text-only line */}
-      <a
-        href="https://www.buymeacoffee.com/kalinyanev"
-        target="_blank"
-        className="text-xs text-neutral-300 hover:text-neutral-100 transition font-semibold"
-      >
-        ☕ Buy the authors a coffee ❤️ · 27 supporters
-      </a>
-
+     <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank" > <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be" className="block mx-auto" /> </a>
       {/* Rules button */}
       <button
         onClick={() => setShowRules(true)}
