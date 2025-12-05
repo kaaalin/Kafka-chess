@@ -1456,20 +1456,16 @@ export default function App() {
         }`}
       disabled
     >
-    
-
-   <div className="w-full flex text-[11px] sm:text-xs">
-  {/* LEFT SIDE → Turn message (shown only when NO gs.message) */}
-  {!gs.message && (
-    <div className="flex-1 text-center">
+<div className="w-full text-center text-[11px] sm:text-xs">
+  {gs.message ? (
+    <>
+      {gs.message} ({gs.turn})
+    </>
+  ) : (
+    <>
       Turn: <b className="capitalize">{gs.turn}</b>
-    </div>
+    </>
   )}
-
-  {/* CENTER SIDE → Game message */}
-  <div className={`flex-1 text-center ${gs.message ? "" : "invisible"}`}>
-    {gs.message} ({gs.turn})
-  </div>
 </div>
     </button>
   </div>
