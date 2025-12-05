@@ -1322,14 +1322,25 @@ export default function App() {
    <a
   href="https://www.buymeacoffee.com/kalinyanev"
   className="inline-block border-[0.5px] border-white rounded-lg p-[3px]"
-     target="_blank"
+  target="_blank"
+  rel="noreferrer"
 >
-  <img
-    src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
-    className="block mx-auto"
-  />
-       <span>Buy the authors a coffee ☕</span>
+  {/* Image only when it loads successfully */}
+  {!coffeeImgFailed && (
+    <img
+      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
+      className="block mx-auto"
+      alt="Buy the authors a coffee"
+      onError={() => setCoffeeImgFailed(true)}
+    />
+  )}
 
+  {/* Fallback text if image fails (ONLY then) */}
+  {coffeeImgFailed && (
+    <span className="text-xs text-white block mx-auto">
+      Buy the authors a coffee ☕
+    </span>
+  )}
 </a>
 
             <button
