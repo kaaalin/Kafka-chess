@@ -1458,14 +1458,16 @@ export default function App() {
     >
     
 
-     <div className="w-full flex justify-between text-[11px] sm:text-xs">
-  {/* LEFT SIDE → Turn message */}
-  <div className="text-left">
-    Turn: <b className="capitalize">{gs.turn}</b>
-  </div>
+   <div className="w-full flex text-[11px] sm:text-xs">
+  {/* LEFT SIDE → Turn message (shown only when NO gs.message) */}
+  {!gs.message && (
+    <div className="text-left">
+      Turn: <b className="capitalize">{gs.turn}</b>
+    </div>
+  )}
 
-  {/* CENTER → Game message */}
-  <div className="text-center flex-1">
+  {/* CENTER SIDE → Game message */}
+  <div className={`flex-1 text-center ${gs.message ? "" : "invisible"}`}>
     {gs.message}
   </div>
 </div>
