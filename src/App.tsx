@@ -1695,7 +1695,18 @@ export default function App() {
       >
 rules + info
       </button>
-
+<div className="w-full flex justify-center mt-3 mb-2">
+  <a
+    href="https://www.buymeacoffee.com/kalinyanev"
+    target="_blank"
+    className="inline-block rounded-xl bg-neutral-800/80 border border-neutral-700 p-2 shadow-lg hover:scale-[1.02] transition-transform"
+  >
+    <img
+      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=83b2be"
+      className="block mx-auto w-56"
+    />
+  </a>
+</div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
