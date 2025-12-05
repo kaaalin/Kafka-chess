@@ -10,12 +10,12 @@ const FILES: FileLetter[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANKS: RankNum[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const GLYPH: Record<PieceType, string> = {
-  K: "♚",
-  Q: "♛",
-  R: "♜",
-  B: "♝",
-  N: "♞",
-  P: "♟",
+  K: "\u265A\uFE0E", // ♚︎
+  Q: "\u265B\uFE0E", // ♛︎
+  R: "\u265C\uFE0E", // ♜︎
+  B: "\u265D\uFE0E", // ♝︎
+  N: "\u265E\uFE0E", // ♞︎
+  P: "\u265F\uFE0E", // ♟︎
 };
 
 const pieceGlyph = (t: PieceType) => GLYPH[t];
