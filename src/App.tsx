@@ -1350,8 +1350,8 @@ export default function App() {
 
   {/* Text-only version on iOS Safari or if image fails */}
   {(coffeeImgFailed || isIosSafari) && (
-    <span className="block text-[10px] sm:text-xs text-white text-center font-poppins">
-      Buy the authors a coffee ☕
+    <span className="block text-[10px] sm:text-xs text-white text-center font-Poppins">
+      Gift a coffee ☕
     </span>
   )}
 </a>
