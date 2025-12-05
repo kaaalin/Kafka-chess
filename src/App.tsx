@@ -200,7 +200,7 @@ function initialGame(): GameState {
     message: null,
     winner: null,
     winReason: null,
-    ai: { mode: "human", cpuPlays: "black", level: "Hard" },
+    ai: { mode: "cpu", cpuPlays: "black", level: "Hard" },
     lastMove: null,
     repetition: {},
   };
