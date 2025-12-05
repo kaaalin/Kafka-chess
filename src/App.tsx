@@ -1702,7 +1702,7 @@ return (
   {/* Rules button */}
   <button
     onClick={() => setShowRules(true)}
-    className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
+    className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200 ml-6"
   >
     rules + info
   </button>
