@@ -1868,7 +1868,11 @@ return (
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
                 game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
               </p>
-
+<img
+  src="https://kafkachess.com/authors.JPG"
+  alt="Authors Kalin and Ivaylo Yanevi"
+  className="w-full rounded-xl mb-4 border border-neutral-700"
+/>
               <h3 className="text-xl font-semibold mt-4 mb-2">Setup</h3>
               <ul className="list-disc pl-6 space-y-1 opacity-90">
                 <li>
