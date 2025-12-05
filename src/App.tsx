@@ -1690,11 +1690,11 @@ export default function App() {
 return (
   <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 pl-48 text-neutral-100">
     {/* Left gutter: BuyMeACoffee + rules, in the space between edge and board */}
-<div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start w-60">
+<div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start w-64">
   {/* Buy Me a Coffee button */}
   <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank">
     <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
+      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&coffee_colour=83b2be"
       className="block w-full h-auto"
     />
   </a>
