@@ -713,7 +713,35 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
   // newGs.message = newGs.message ?? null;
   // or just leave message as-is unless you really want to clear it
 
+// --- THREEFOLD REPETITION RULE ---
+  // Encode the current position (board + side to move + king presence flags)
+  const repKey = encodePosition(newGs);
+  const repCount = (newGs.repetition[repKey] ?? 0) + 1;
+  newGs.repetition[repKey] = repCount;
 
+  if (repCount >= 3 && !newGs.winner) {
+    const whiteHasKing = !!findKingSquare(newGs, "white");
+    const blackHasKing = !!findKingSquare(newGs, "black");
+
+    // 1) Draw when both players have kings OR both don't have
+    if ((whiteHasKing && blackHasKing) || (!whiteHasKing && !blackHasKing)) {
+      newGs.winner = null;
+      newGs.winReason = "threefold repetition (draw)";
+      newGs.message = "Draw by threefold repetition.";
+      return newGs;
+    }
+
+    // 2) If only one has a king – a win for this player
+    if (whiteHasKing !== blackHasKing) {
+      const winner: Color = whiteHasKing ? "white" : "black";
+      newGs.winner = winner;
+      newGs.winReason = "threefold repetition vs kingless opponent";
+      newGs.message = `Winner: ${winner} (threefold repetition vs kingless opponent)`;
+      return newGs;
+    }
+  }
+  // --- END THREEFOLD REPETITION RULE ---
+  
   const lastMoverColor: Color = newGs.turn === "white" ? "black" : "white";
 
   const win = detectWin(newGs, lastMoverColor, capturedKing);
