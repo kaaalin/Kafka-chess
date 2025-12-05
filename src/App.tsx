@@ -1458,16 +1458,15 @@ export default function App() {
     >
     
 
-      {/* LINE 2 — GAME MESSAGE (Illegal move, Check, Winner, etc.) */}
- <div className="w-full text-[11px] sm:text-xs">
-  {/* Centered game message: Illegal move, Check, etc. */}
-  <div className="text-center">
-    {gs.message}
+     <div className="w-full flex justify-between text-[11px] sm:text-xs">
+  {/* LEFT SIDE → Turn message */}
+  <div className="text-left">
+    Turn: <b className="capitalize">{gs.turn}</b>
   </div>
 
-  {/* Turn message – always left aligned */}
-  <div className="text-left mt-1">
-    Turn: <b className="capitalize">{gs.turn}</b> I
+  {/* CENTER → Game message */}
+  <div className="text-center flex-1">
+    {gs.message}
   </div>
 </div>
     </button>
