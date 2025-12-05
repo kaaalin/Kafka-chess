@@ -1821,10 +1821,7 @@ export default function App() {
         <h2 className="text-lg font-semibold">Black chrysalis</h2>
         <StockView stock={blackStock} color="black" align="right" />
       </div>
- <a
-   href="https://www.buymeacoffee.com/kalinyanev" className="inline-block border-[0.5px] border-white rounded-lg p-[3px]" target="_blank" >
-   <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=171717&coffee_colour=83b2be" className="block mx-auto" /> </a>
-      {/* Quietus – desktop old style */}
+ {/* Quietus – desktop old style */}
       <div className="fixed left-4 right-4 bottom-4 bg-neutral-800/90 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
         <div className="flex items-center justify-between">
           <div className="font-semibold tracking-wide">Quietus</div>
