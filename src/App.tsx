@@ -1468,7 +1468,7 @@ export default function App() {
 
   {/* CENTER SIDE → Game message */}
   <div className={`flex-1 text-center ${gs.message ? "" : "invisible"}`}>
-    {gs.message}
+    {gs.message} ({gs.turn})
   </div>
 </div>
     </button>
