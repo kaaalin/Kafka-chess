@@ -1688,15 +1688,16 @@ export default function App() {
 
   // DESKTOP LAYOUT (old view)
  return (
-<div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 pt-24 text-neutral-100">
+  <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
+    {/* Left gutter: BuyMeACoffee + rules, in the space between edge and board */}
+    <div className="flex flex-col items-start gap-2 mr-2">
+      <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank">
+        <img
+          src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=171717&coffee_colour=83b2be"
+          className="block max-w-[9rem] w-full h-auto"
+        />
+      </a>
 
-    {/* Fixed top-left controls: rules + BuyMeACoffee */}
-    
-
-    <div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start">
-      {/* Buy Me a Coffee text-only line */}
-     <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank" > <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be" className="block mx-auto" /> </a>
-      {/* Rules button */}
       <button
         onClick={() => setShowRules(true)}
         className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
