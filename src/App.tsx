@@ -1319,7 +1319,11 @@ export default function App() {
 
   const rankOrder = flipped ? [...RANKS].slice().reverse() : RANKS;
   const fileOrder = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
-
+const isCpuThinking =
+  gs.ai.mode === "cpu" &&
+  gs.turn === gs.ai.cpuPlays &&
+  !gs.winner;
+  
   // MOBILE LAYOUT
   if (isMobile) {
     return (
@@ -1380,12 +1384,23 @@ export default function App() {
   {/* Row 2: message */}
         
         {/* Row 3: Computer opponent box */}
-        <div className="flex justify-center mb-2">
-          <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <div className="font-semibold">Computer opponent</div>
-            </div>
-            <label className="flex items-center justify-between gap-2 text-sm">
+       <div className="flex justify-center mb-2">
+  <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
+    <div className="flex items-center justify-between text-sm">
+      <div className="font-semibold">Computer opponent</div>
+      {isCpuThinking && (
+        <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-emerald-300">
+          <img
+            src="/cover-bmac.png"
+            alt="CPU thinking"
+            className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
+          />
+          <span>thinking…</span>
+        </div>
+      )}
+    </div>
+    <label className="flex items-center justify-between gap-2 text-sm">
+
               <span>Mode</span>
               <select
                 className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
@@ -1769,9 +1784,22 @@ return (
             {gs.message}
           </div>
         )}
-        <div className="mt-2 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
-          <div className="font-semibold text-sm">Computer opponent</div>
-          <label className="flex items-center justify-between gap-2 text-sm">
+        <div className="w-60 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
+  <div className="flex items-center justify-between text-sm">
+    <div className="font-semibold">Computer opponent</div>
+    {isCpuThinking && (
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-emerald-300">
+        <img
+          src="/cover-bmac.png"
+          alt="CPU thinking"
+          className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
+        />
+        <span>thinking…</span>
+      </div>
+    )}
+  </div>
+  <label className="flex items-center justify-between gap-2 text-sm">
+
             <span>Mode</span>
             <select
               className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
