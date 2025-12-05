@@ -1118,13 +1118,25 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [coffeeImgFailed, setCoffeeImgFailed] = useState(false);
+  const [isIosSafari, setIsIosSafari] = useState(false);
  const [isMobile, setIsMobile] = useState(() => {
   if (typeof window === "undefined") return false;
   return window.innerWidth < 768;
 });
-
-
   const newGame = () => setGs(initialGame());
+
+  useEffect(() => {
+  if (typeof navigator === "undefined") return;
+
+  const ua = navigator.userAgent || "";
+  const isiOS = /iPhone|iPad|iPod/.test(ua);
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|Firefox/.test(ua);
+
+  if (isiOS && isSafari) {
+    setIsIosSafari(true);
+    setCoffeeImgFailed(true); // force text mode there
+  }
+}, []);
 
   useEffect(() => {
     if (!testsOnce.current) {
@@ -1322,12 +1334,12 @@ export default function App() {
           </button>
   <a
   href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-[0.5px] border-white rounded-lg p-[3px]"
+  className="inline-block border-[0.5px] border-white rounded-lg px-2 py-[3px]"
   target="_blank"
   rel="noreferrer"
 >
-  {/* Show image if it loads OK */}
-  {!coffeeImgFailed && (
+  {/* Image for non-iOS Safari, with fallback */}
+  {!coffeeImgFailed && !isIosSafari && (
     <img
       src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
       className="block mx-auto"
@@ -1336,13 +1348,14 @@ export default function App() {
     />
   )}
 
-  {/* Fallback text only if image fails */}
-  {coffeeImgFailed && (
-    <span className="block text-[10px] sm:text-xs text-white text-center px-1">
+  {/* Text-only version on iOS Safari or if image fails */}
+  {(coffeeImgFailed || isIosSafari) && (
+    <span className="block text-[10px] sm:text-xs text-white text-center">
       Buy the authors a coffee ☕
     </span>
   )}
 </a>
+
 
             <button
             onClick={newGame}
