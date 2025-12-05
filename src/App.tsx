@@ -1689,27 +1689,28 @@ export default function App() {
   // DESKTOP LAYOUT (old view)
  return (
   <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
+
     {/* Fixed top-left controls: rules + BuyMeACoffee */}
+    {/* OLD BLOCK REMOVED */}
+
     <div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start">
+      {/* Buy Me a Coffee text-only line */}
+      <a
+        href="https://www.buymeacoffee.com/kalinyanev"
+        target="_blank"
+        className="text-xs text-neutral-300 hover:text-neutral-100 transition font-semibold"
+      >
+        ☕ Buy the authors a coffee ❤️ · 27 supporters
+      </a>
 
-  {/* Buy Me a Coffee text-only line */}
-  <a
-    href="https://www.buymeacoffee.com/kalinyanev"
-    target="_blank"
-    className="text-xs text-neutral-300 hover:text-neutral-100 transition font-semibold"
-  >
-    ☕ Buy the authors a coffee ❤️ · 27 supporters
-  </a>
-
-  {/* Rules button */}
-  <button
-    onClick={() => setShowRules(true)}
-    className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
-  >
-    rules + info
-  </button>
-</div>
-   </div>
+      {/* Rules button */}
+      <button
+        onClick={() => setShowRules(true)}
+        className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
+      >
+        rules + info
+      </button>
+    </div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
