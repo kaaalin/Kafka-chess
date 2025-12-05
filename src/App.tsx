@@ -1687,26 +1687,26 @@ export default function App() {
   }
 
   // DESKTOP LAYOUT (old view)
-  return (
-    <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
+ return (
+  <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
+    {/* Fixed top-left controls: rules + BuyMeACoffee */}
+    <div className="fixed top-3 left-4 z-50 flex flex-col gap-2 items-start">
       <button
         onClick={() => setShowRules(true)}
-        className="fixed top-3 left-4 z-50 text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
+        className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
       >
-rules + info
+        rules + info
       </button>
-<div className="w-full flex justify-center mt-3 mb-2">
-  <a
-    href="https://www.buymeacoffee.com/kalinyanev"
-    target="_blank"
-    className="inline-block rounded-xl bg-neutral-800/80 border border-neutral-700 p-2 shadow-lg hover:scale-[1.02] transition-transform"
-  >
-    <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=83b2be"
-      className="block mx-auto w-56"
-    />
-  </a>
-</div>
+
+      <a
+        href="https://www.buymeacoffee.com/kalinyanev"
+        target="_blank"
+        rel="noreferrer"
+        className="px-4 py-2 rounded-2xl bg-neutral-800/90 border border-neutral-700 text-xs font-semibold text-neutral-100 shadow-lg hover:bg-neutral-700 hover:translate-y-[1px] transition"
+      >
+        Buy the authors a coffee ☕
+      </a>
+    </div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
