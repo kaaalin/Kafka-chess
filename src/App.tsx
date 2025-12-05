@@ -1352,8 +1352,8 @@ export default function App() {
   {(coffeeImgFailed || isIosSafari) && (
    <span
   className="
-    block text-[10px] sm:text-xs text-center font-poppins
-    px-3 py-2 rounded-2xl bg-[#171717] text-neutral-900 font-bold 
+    block text-[10px] sm:text-xs text-center font-Poppins
+    px-3 py-2 rounded-2xl bg-[#171717] text-white font-bold text-[13px]
   "
 >
   Buy the authors a coffee ☕
