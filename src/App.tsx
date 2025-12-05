@@ -1688,7 +1688,7 @@ export default function App() {
 
   // DESKTOP LAYOUT (old view)
  return (
-  <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 text-neutral-100">
+<div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 pt-24 text-neutral-100">
 
     {/* Fixed top-left controls: rules + BuyMeACoffee */}
     
