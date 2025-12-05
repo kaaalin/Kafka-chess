@@ -1389,13 +1389,13 @@ const isCpuThinking =
     <div className="flex items-center justify-between text-sm">
       <div className="font-semibold">Computer opponent</div>
       {isCpuThinking && (
-        <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-emerald-300">
+        <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-white">
           <img
             src="/cover-bmac.png"
             alt="CPU thinking"
             className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
           />
-          <span>thinking…</span>
+          <span>…</span>
         </div>
       )}
     </div>
@@ -1788,13 +1788,13 @@ return (
   <div className="flex items-center justify-between text-sm">
     <div className="font-semibold">Computer opponent</div>
     {isCpuThinking && (
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-emerald-300">
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-white">
         <img
           src="/cover-bmac.png"
           alt="CPU thinking"
           className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
         />
-        <span>thinking…</span>
+        <span>…</span>
       </div>
     )}
   </div>
