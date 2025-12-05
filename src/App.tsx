@@ -1706,6 +1706,7 @@ return (
   >
     rules + info
   </button>
+</div>
       {/* Left panel: white chrysalis + controls */}
       <div className="flex flex-col gap-3 w-56 shrink-0">
         <h2 className="text-lg font-semibold">White chrysalis</h2>
