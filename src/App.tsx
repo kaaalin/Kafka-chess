@@ -1117,6 +1117,7 @@ export default function App() {
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [coffeeImgFailed, setCoffeeImgFailed] = useState(false);
  const [isMobile, setIsMobile] = useState(() => {
   if (typeof window === "undefined") return false;
   return window.innerWidth < 768;
