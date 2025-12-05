@@ -1461,7 +1461,7 @@ export default function App() {
    <div className="w-full flex text-[11px] sm:text-xs">
   {/* LEFT SIDE → Turn message (shown only when NO gs.message) */}
   {!gs.message && (
-    <div className="text-left">
+    <div className="text-center">
       Turn: <b className="capitalize">{gs.turn}</b>
     </div>
   )}
