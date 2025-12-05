@@ -1353,7 +1353,7 @@ export default function App() {
    <span
   className="
     block text-[10px] sm:text-xs text-center font-poppins
-    px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow
+    px-3 py-2 rounded-2xl bg-[#171717] text-neutral-900 font-bold 
   "
 >
   Buy the authors a coffee ☕
