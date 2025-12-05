@@ -1334,7 +1334,7 @@ export default function App() {
           </button>
   <a
   href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-[0.5px] border-white rounded-lg px-2 py-[3px]"
+  className="inline-block border-[0.5px] border-white rounded-lg px-2"
   target="_blank"
   rel="noreferrer"
 >
