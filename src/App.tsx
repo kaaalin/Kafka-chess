@@ -1,31 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-function getIOSInfo() {
-  if (typeof navigator === "undefined") {
-    return { isIOS: false, isStandalone: false };
-  }
-
-  const ua = navigator.userAgent || navigator.vendor || window.opera;
-
-  const isIOS = /iPad|iPhone|iPod/.test(ua);
-  const isStandalone =
-    (navigator as any).standalone === true ||
-    window.matchMedia("(display-mode: standalone)").matches;
-
-  return { isIOS, isStandalone };
-}
-
-function safeOpen(url: string) {
-  const { isIOS, isStandalone } = getIOSInfo();
-
-  const target = isIOS && isStandalone ? "_self" : "_blank";
-
-  try {
-    const win = window.open(url, target, "noopener,noreferrer");
-    if (!win) window.location.href = url;
-  } catch {
-    window.location.href = url;
-  }
-}
 
 type FileLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 type RankNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -1138,9 +1111,6 @@ const Metamorph = ({ color }: { color: Color }) => (
 );
 
 export default function App() {
-  const [imgFailed, setImgFailed] = useState(false);
-const { isIOS } = getIOSInfo();
-const fallback = imgFailed || isIOS;
   const [gs, setGs] = useState<GameState>(() => initialGame());
   const dragFrom = useRef<SquareId | null>(null);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
@@ -1366,28 +1336,21 @@ const isCpuThinking =
           >
             INFO
           </button>
- <a
-  onClick={(e) => {
-    e.preventDefault();
-    safeOpen("https://www.buymeacoffee.com/kalinyanev");
-  }}
+  <a
   href="https://www.buymeacoffee.com/kalinyanev"
   className="inline-block border-[0.5px] bg-[#000000] border-white rounded-2xl px-2"
+  target="_blank"
+  rel="noreferrer"
 >
-  {!fallback ? (
+  {/* Image for non-iOS Safari, with fallback */}
+  {!coffeeImgFailed && !isIosSafari && (
     <img
       src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
       className="block mx-auto"
       alt="Buy the authors a coffee"
-      onError={() => setImgFailed(true)}
+      onError={() => setCoffeeImgFailed(true)}
     />
-  ) : (
-    <span className="block sm:text-xs text-center font-Poppins px-3 py-2 rounded-2xl bg-[#000000] text-white font-bold text-[11px]">
-      Buy the authors a coffee ☕
-    </span>
   )}
-</a>
-
 
   {/* Text-only version on iOS Safari or if image fails */}
   {(coffeeImgFailed || isIosSafari) && (
