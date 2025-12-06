@@ -1123,6 +1123,34 @@ export default function App() {
   if (typeof window === "undefined") return false;
   return window.innerWidth < 768;
 });
+
+  const touchStartY = useRef<number | null>(null);
+const touchMoved = useRef(false);
+
+const handleRulesTouchStart = (e: React.TouchEvent) => {
+  if (!isMobile) return;
+  touchMoved.current = false;
+  touchStartY.current = e.touches[0].clientY;
+};
+
+const handleRulesTouchMove = (e: React.TouchEvent) => {
+  if (!isMobile) return;
+  if (touchStartY.current == null) return;
+
+  const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+  // if the finger moved more than ~10px, treat this as scroll, not a tap
+  if (dy > 10) {
+    touchMoved.current = true;
+  }
+};
+
+const handleRulesTouchEnd = () => {
+  if (!isMobile) return;
+  // Only close if finger didn't move much (a real tap)
+  if (!touchMoved.current) {
+    setShowRules(false);
+  }
+};
   const newGame = () => setGs(initialGame());
 
   useEffect(() => {
@@ -1557,15 +1585,26 @@ const isCpuThinking =
 
 
         {/* Rules modal */}
-        {showRules && (
-          <div
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
-            onClick={() => setShowRules(false)}
-          >
-            <div
-              className="max-h-[85vh] w-full max-w-3xl overflow-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
+       
+  {showRules && (
+  <div
+    className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
+    onClick={() => {
+      // Backdrop click closes only on desktop/tablet
+      if (!isMobile) setShowRules(false);
+    }}
+  >
+    <div
+      className="max-h-[85vh] w-full max-w-3xl overflow-auto"
+      // Desktop: prevent backdrop click when clicking inside
+      onClick={(e) => {
+        if (!isMobile) e.stopPropagation();
+      }}
+      // Mobile: detect tap vs scroll
+      onTouchStart={handleRulesTouchStart}
+      onTouchMove={handleRulesTouchMove}
+      onTouchEnd={handleRulesTouchEnd}
+    >
              <div className="bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6">
               <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
                 Kafka Chess - Rules &amp; Information
