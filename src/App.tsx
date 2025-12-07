@@ -1741,9 +1741,9 @@ const isCpuThinking =
                 <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
               </p>
                      <p className="mt-4 opacity-90">
-                <em>*Special thanks to Theodore De Marville for his sharp and quick critical thinking, and H.G.Muller who dialectically  helped refining some end game rules - especially winning by three-fold repetition.</em>
+                *Special thanks to Theodore De Marville for his sharp and quick critical thinking, and H.G.Muller who dialectically  helped refining some end game rules - especially winning by three-fold repetition.
                </p>
-              <p className="mt-2 text-sm opacity-70">
+              <p className="mt-4 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
               </p>
             </div>
