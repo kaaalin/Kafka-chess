@@ -1000,7 +1000,7 @@ function ChrysalisGlyph({
       <svg viewBox="0 0 100 100" className="w-[90%] h-[90%]">
         <text
           x="50"
-          y="70"
+          y="78"
           textAnchor="middle"
           fontSize="92"
           fill={fill}
@@ -1106,7 +1106,7 @@ const Piece = ({ occ }: { occ: Extract<Occupant, { kind: "piece" }> }) => {
         >
           <text
             x="50"
-            y="70"
+            y="78"
             textAnchor="middle"
             fontSize="92"
             fill={color}
@@ -1540,16 +1540,11 @@ const hidesBlue =
                       </div>
                     )}
 
-                  {sq.occupant?.kind === "piece" && (
-  <div
-    className="absolute inset-0 flex items-center justify-center"
-    draggable
-    onDragStart={(e) => onDragStart(e, sq)}
-  >
-    <Piece occ={sq.occupant} />
-  </div>
-)}
- 
+                    {sq.occupant?.kind === "piece" && (
+                      <div draggable onDragStart={(e) => onDragStart(e, sq)}>
+                        <Piece occ={sq.occupant} />
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1958,16 +1953,11 @@ return (
                   </div>
                 )}
 
-               {sq.occupant?.kind === "piece" && (
-  <div
-    className="absolute inset-0 flex items-center justify-center"
-    draggable
-    onDragStart={(e) => onDragStart(e, sq)}
-  >
-    <Piece occ={sq.occupant} />
-  </div>
-)}
-
+                {sq.occupant?.kind === "piece" && (
+                  <div draggable onDragStart={(e) => onDragStart(e, sq)}>
+                    <Piece occ={sq.occupant} />
+                  </div>
+                )}
               </div>
             );
           })
