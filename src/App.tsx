@@ -97,6 +97,7 @@ type Occupant =
       bornAtTurn: number;
       mustReturn?: boolean;
       returnByTurn?: number;
+     coversBlueSymbol?: boolean;
     }
   | null;
 
@@ -346,27 +347,39 @@ function applyAutoTransforms(gs: GameState): { newGs: GameState; changed: boolea
     if (!(sq.rank >= 3 && sq.rank <= 6) || !sq.blueSymbol || !sq.occupant) continue;
 
     if (sq.occupant.kind === "metamorph") {
-      const c = sq.occupant.color;
-      const t = sq.blueSymbol;
-      if (next.stock[c][t] > 0) {
-        next.stock[c][t]--;
-        sq.occupant = { kind: "piece", color: c, type: t, bornAtTurn: next.moveNumber };
-        if (t === "K") next.kingOnBoard[c] = true;
-        changed = true;
-      }
-    } else {
-      const c = sq.occupant.color;
-      const cur = sq.occupant.type;
-      const t = sq.blueSymbol;
-      if (cur !== t && next.stock[c][t] > 0) {
-        next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
-        next.stock[c][t]--;
-        sq.occupant = { kind: "piece", color: c, type: t, bornAtTurn: next.moveNumber };
-        if (cur === "K" && t !== "K") next.kingOnBoard[c] = false;
-        if (t === "K") next.kingOnBoard[c] = true;
-        changed = true;
-      }
-    }
+  const c = sq.occupant.color;
+  const t = sq.blueSymbol;
+  if (next.stock[c][t] > 0) {
+    next.stock[c][t]--;
+    sq.occupant = {
+      kind: "piece",
+      color: c,
+      type: t,
+      bornAtTurn: next.moveNumber,
+      coversBlueSymbol: true, // NEW
+    };
+    if (t === "K") next.kingOnBoard[c] = true;
+    changed = true;
+  }
+} else {
+  const c = sq.occupant.color;
+  const cur = sq.occupant.type;
+  const t = sq.blueSymbol;
+  if (cur !== t && next.stock[c][t] > 0) {
+    next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
+    next.stock[c][t]--;
+    sq.occupant = {
+      kind: "piece",
+      color: c,
+      type: t,
+      bornAtTurn: next.moveNumber,
+      coversBlueSymbol: true, // NEW
+    };
+    if (cur === "K" && t !== "K") next.kingOnBoard[c] = false;
+    if (t === "K") next.kingOnBoard[c] = true;
+    changed = true;
+  }
+}
   }
 
   return { newGs: next, changed };
@@ -646,7 +659,9 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
   from.occupant = null;
 
   next.lastMove = { from: fromId, to: toId, by: (mover as any).color };
-
+  if (to.occupant && to.occupant.kind === "piece") {
+    to.occupant.coversBlueSymbol = false;
+  }
   if (
     to.occupant &&
     to.occupant.kind === "piece" &&
@@ -664,13 +679,16 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
     const t = to.blueSymbol;
 
     if (cur !== t && next.stock[c][t] > 0) {
-      next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
-      next.stock[c][t] = Math.max(0, next.stock[c][t] - 1);
-      to.occupant.type = t;
-      to.occupant.bornAtTurn = next.moveNumber;
-    }
+    // Successful transform
+    next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
+    next.stock[c][t] = Math.max(0, next.stock[c][t] - 1);
+    to.occupant.type = t;
+    to.occupant.bornAtTurn = next.moveNumber;
+    to.occupant.coversBlueSymbol = true; // NEW
   }
-
+  // If no transform (same type or no stock) we leave coversBlueSymbol as false,
+  // so the symbol remains visible under the piece.
+}
   // Pawn promotion: if a pawn just reached the last rank, open promotion panel
   if (
     to.occupant &&
@@ -1497,10 +1515,12 @@ const isCpuThinking =
                     {isTo && (
                       <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
                     )}
+const occ = sq.occupant;
+const hidesBlue = !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
 
-                    {sq.blueSymbol && r >= 3 && r <= 6 && sq.occupant?.kind !== "piece" && (
-                      <BlueSymbol type={sq.blueSymbol} />
-                    )}
+{sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
+  <BlueSymbol type={sq.blueSymbol} />
+)}
 
                     {sq.occupant?.kind === "metamorph" && (
                       <div draggable onDragStart={(e) => onDragStart(e, sq)}>
@@ -1908,9 +1928,12 @@ return (
                   <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
                 )}
 
-                {sq.blueSymbol && r >= 3 && r <= 6 && sq.occupant?.kind !== "piece" && (
-                  <BlueSymbol type={sq.blueSymbol} />
-                )}
+              const occ = sq.occupant;
+const hidesBlue = !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
+
+{sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
+  <BlueSymbol type={sq.blueSymbol} />
+)}
 
                 {sq.occupant?.kind === "metamorph" && (
                   <div draggable onDragStart={(e) => onDragStart(e, sq)}>
