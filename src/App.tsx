@@ -1540,7 +1540,7 @@ const hidesBlue =
                       </div>
                     )}
 
-                   {sq.occupant?.kind === "piece" && (
+                  {sq.occupant?.kind === "piece" && (
   <div
     className="absolute inset-0 flex items-center justify-center"
     draggable
@@ -1549,6 +1549,7 @@ const hidesBlue =
     <Piece occ={sq.occupant} />
   </div>
 )}
+ 
                   </div>
                 );
               })
@@ -1957,7 +1958,7 @@ return (
                   </div>
                 )}
 
-                {sq.occupant?.kind === "piece" && (
+               {sq.occupant?.kind === "piece" && (
   <div
     className="absolute inset-0 flex items-center justify-center"
     draggable
@@ -1966,7 +1967,7 @@ return (
     <Piece occ={sq.occupant} />
   </div>
 )}
-                )}
+
               </div>
             );
           })
