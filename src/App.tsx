@@ -1497,7 +1497,9 @@ const isCpuThinking =
                 const showAi = gs.ai.mode === "cpu" && lm && lm.by === gs.ai.cpuPlays;
                 const isFrom = showAi && lm!.from === sq.id;
                 const isTo = showAi && lm!.to === sq.id;
-
+const occ = sq.occupant;
+const hidesBlue =
+  !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
                 return (
                   <div
                     key={sq.id}
@@ -1515,8 +1517,7 @@ const isCpuThinking =
                     {isTo && (
                       <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
                     )}
-const occ = sq.occupant;
-const hidesBlue = !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
+
 
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
   <BlueSymbol type={sq.blueSymbol} />
@@ -1911,7 +1912,9 @@ return (
             const showAi = gs.ai.mode === "cpu" && lm && lm.by === gs.ai.cpuPlays;
             const isFrom = showAi && lm!.from === sq.id;
             const isTo = showAi && lm!.to === sq.id;
-
+ const occ = sq.occupant;
+  const hidesBlue =
+    !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
             return (
               <div
                 key={sq.id}
@@ -1928,9 +1931,7 @@ return (
                   <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
                 )}
 
-              const occ = sq.occupant;
-const hidesBlue = !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
-
+              
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
   <BlueSymbol type={sq.blueSymbol} />
 )}
