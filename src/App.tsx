@@ -1540,11 +1540,15 @@ const hidesBlue =
                       </div>
                     )}
 
-                    {sq.occupant?.kind === "piece" && (
-                      <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                        <Piece occ={sq.occupant} />
-                      </div>
-                    )}
+                   {sq.occupant?.kind === "piece" && (
+  <div
+    className="absolute inset-0 flex items-center justify-center"
+    draggable
+    onDragStart={(e) => onDragStart(e, sq)}
+  >
+    <Piece occ={sq.occupant} />
+  </div>
+)}
                   </div>
                 );
               })
@@ -1954,9 +1958,14 @@ return (
                 )}
 
                 {sq.occupant?.kind === "piece" && (
-                  <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                    <Piece occ={sq.occupant} />
-                  </div>
+  <div
+    className="absolute inset-0 flex items-center justify-center"
+    draggable
+    onDragStart={(e) => onDragStart(e, sq)}
+  >
+    <Piece occ={sq.occupant} />
+  </div>
+)}
                 )}
               </div>
             );
