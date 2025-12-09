@@ -672,23 +672,34 @@ if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") 
     to.occupant.mustReturn = false;
     (to.occupant as any).returnByTurn = undefined;
   }
+if (
+  to.occupant &&
+  to.occupant.kind === "piece" &&
+  to.rank >= 3 &&
+  to.rank <= 6 &&
+  to.blueSymbol
+) {
+  const c = to.occupant.color;
+  const cur = to.occupant.type;
+  const t = to.blueSymbol;
 
-  if (to.occupant && to.occupant.kind === "piece" && to.rank >= 3 && to.rank <= 6 && to.blueSymbol) {
-    const c = to.occupant.color;
-    const cur = to.occupant.type;
-    const t = to.blueSymbol;
-
-    if (cur !== t && next.stock[c][t] > 0) {
-    // Successful transform
+  if (cur !== t && next.stock[c][t] > 0) {
+    // Successful transform: change type and hide the blue symbol under the new piece
     next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
     next.stock[c][t] = Math.max(0, next.stock[c][t] - 1);
     to.occupant.type = t;
     to.occupant.bornAtTurn = next.moveNumber;
-    to.occupant.coversBlueSymbol = true; // NEW
+    to.occupant.coversBlueSymbol = true;
+  } else if (cur === t) {
+    // NEW RULE: landing on a same-type card consumes/hides that symbol visually
+    // (no stock change, no transform – just hide the blue symbol under this piece)
+    to.occupant.coversBlueSymbol = true;
   }
-  // If no transform (same type or no stock) we leave coversBlueSymbol as false,
-  // so the symbol remains visible under the piece.
+  // Only remaining "no-transform" case is: cur !== t but no stock of t.
+  // There we keep coversBlueSymbol = false so the symbol stays visible.
 }
+
+ 
   // Pawn promotion: if a pawn just reached the last rank, open promotion panel
   if (
     to.occupant &&
