@@ -1452,7 +1452,7 @@ const isCpuThinking =
             alt="CPU thinking"
             className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
           />
-          <span>…</span>
+          <span>thinking …</span>
         </div>
       )}
     </div>
@@ -1868,7 +1868,7 @@ return (
           alt="CPU thinking"
           className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
         />
-        <span>…</span>
+        <span>thinking …</span>
       </div>
     )}
   </div>
