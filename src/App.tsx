@@ -1790,11 +1790,12 @@ const hidesBlue =
             <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px] shadow-2xl">
               <div className="text-lg font-semibold mb-2">Promote pawn</div>
               <div className="grid grid-cols-4 gap-2">
-               {["Q", "R", "B", "N"].map((t) => (
+              {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
   <button
     key={t}
-    className="px-2 py-1 bg-neutral-700 rounded hover:bg-neutral-600 transition text-white"
-    onClick={() => setGs((p) => applyPromotionChoice(p, t))}
+    className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+    disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
+    onClick={() => handlePromotion(t)}
   >
     <span
       className="text-3xl leading-none"
@@ -1804,6 +1805,7 @@ const hidesBlue =
     </span>
   </button>
 ))}
+
               </div>
               <div className="mt-3 text-sm opacity-80">
                 Promote only to Q, R, B, or N. If available in Quietus, it will be taken from there first.
