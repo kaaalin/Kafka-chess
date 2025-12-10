@@ -1862,7 +1862,7 @@ return (
   <div className="flex items-center justify-between text-sm">
     <div className="font-semibold">Computer opponent</div>
     {isCpuThinking && (
-      <div className="flex items-center gap-1 text-[10px] tracking-[0.18em] text-white">
+      <div className="flex items-center text-[10px] tracking-[0.18em] text-white">
         <img
           src="/cover-bmac.png"
           alt="CPU thinking"
