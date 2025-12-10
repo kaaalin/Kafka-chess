@@ -1868,7 +1868,7 @@ return (
           alt="CPU thinking"
           className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
         />
-        <span>thinking …</span>
+        <span>thinking…</span>
       </div>
     )}
   </div>
