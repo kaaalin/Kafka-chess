@@ -1804,11 +1804,11 @@ const hidesBlue =
           // white side promotes → light piece, black side → dark piece
           color:
             gs.promotion?.color === "white"
-              ? "#f5f5f5" // same as your white pieces
-              : "#111111", // same as your black pieces
+              ? "#f5f5f5" 
+              : "#111111", 
             gs.promotion?.color === "white"
-        ? "#e5e7eb"  // light gray for white promotion (Tailwind neutral-300)
-        : "#1f2937", // dark gray for black promotion (Tailwind gray-800)
+        ? "#e5e7eb"  
+        : "#1f2937", 
         }}
       >
         {pieceGlyph(t)}
@@ -2179,11 +2179,11 @@ return (
           // white side promotes → light piece, black side → dark piece
           color:
             gs.promotion?.color === "white"
-              ? "#f5f5f5" // same as your white pieces
-              : "#111111", // same as your black pieces
+              ? "#f5f5f5" 
+              : "#111111", 
             gs.promotion?.color === "white"
-        ? "#e5e7eb"  // light gray for white promotion (Tailwind neutral-300)
-        : "#1f2937", // dark gray for black promotion (Tailwind gray-800)
+        ? "#e5e7eb"  
+        : "#1f2937", 
         }}
       >
         {pieceGlyph(t)}
