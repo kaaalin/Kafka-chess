@@ -1793,7 +1793,7 @@ const hidesBlue =
   {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
     <button
       key={t}
-      className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+      className="p-3 rounded-xl bg-neutral-400 text-neutral-900 disabled:opacity-40"
       disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
       onClick={() => handlePromotion(t)}
     >
@@ -2165,7 +2165,7 @@ return (
   {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
     <button
       key={t}
-      className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+      className="p-3 rounded-xl bg-neutral-400 text-neutral-900 disabled:opacity-40"
       disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
       onClick={() => handlePromotion(t)}
     >
