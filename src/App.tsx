@@ -1804,7 +1804,7 @@ const hidesBlue =
           // white side promotes → light piece, black side → dark piece
           color:
             gs.promotion?.color === "white"
-              ? "#000000" 
+              ? "#ffffff" 
               : "#111111", 
               backgroundColor:
             gs.promotion?.color === "white"
