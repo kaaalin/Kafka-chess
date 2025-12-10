@@ -1798,7 +1798,7 @@ const hidesBlue =
       onClick={() => handlePromotion(t)}
     >
       <span
-        className="text-3xl leading-none shadow"
+        className="text-3xl leading-none "
         style={{
           fontFamily: "'Noto Chess','DejaVu Sans',serif",
           // white side promotes → light piece, black side → dark piece
@@ -1806,6 +1806,9 @@ const hidesBlue =
             gs.promotion?.color === "white"
               ? "#f5f5f5" // same as your white pieces
               : "#111111", // same as your black pieces
+            gs.promotion?.color === "white"
+        ? "#e5e7eb"  // light gray for white promotion (Tailwind neutral-300)
+        : "#1f2937", // dark gray for black promotion (Tailwind gray-800)
         }}
       >
         {pieceGlyph(t)}
@@ -2170,7 +2173,7 @@ return (
       onClick={() => handlePromotion(t)}
     >
       <span
-        className="text-3xl leading-none shadow"
+        className="text-3xl leading-none"
         style={{
           fontFamily: "'Noto Chess','DejaVu Sans',serif",
           // white side promotes → light piece, black side → dark piece
@@ -2178,6 +2181,9 @@ return (
             gs.promotion?.color === "white"
               ? "#f5f5f5" // same as your white pieces
               : "#111111", // same as your black pieces
+            gs.promotion?.color === "white"
+        ? "#e5e7eb"  // light gray for white promotion (Tailwind neutral-300)
+        : "#1f2937", // dark gray for black promotion (Tailwind gray-800)
         }}
       >
         {pieceGlyph(t)}
