@@ -1790,21 +1790,28 @@ const hidesBlue =
             <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px] shadow-2xl">
               <div className="text-lg font-semibold mb-2">Promote pawn</div>
               <div className="grid grid-cols-4 gap-2">
-              {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
-  <button
-    key={t}
-    className="p-3 rounded-xl bg-white text-neutral-900 disabled:opacity-40"
-    disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
-    onClick={() => handlePromotion(t)}
-  >
-    <span
-      className="text-3xl leading-none text-neutral-600"
-      style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
+  {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
+    <button
+      key={t}
+      className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+      disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
+      onClick={() => handlePromotion(t)}
     >
-      {pieceGlyph(t)}
-    </span>
-  </button>
-))}
+      <span
+        className="text-3xl leading-none"
+        style={{
+          fontFamily: "'Noto Chess','DejaVu Sans',serif",
+          // white side promotes → light piece, black side → dark piece
+          color:
+            gs.promotion?.color === "white"
+              ? "#f5f5f5" // same as your white pieces
+              : "#111111", // same as your black pieces
+        }}
+      >
+        {pieceGlyph(t)}
+      </span>
+    </button>
+  ))}
 
               </div>
               <div className="mt-3 text-sm opacity-80">
@@ -2155,21 +2162,28 @@ return (
           <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px] shadow-2xl">
             <div className="text-lg font-semibold mb-2">Promote pawn</div>
             <div className="grid grid-cols-4 gap-2">
-             {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
-  <button
-    key={t}
-    className="p-3 rounded-xl bg-white text-neutral-900 disabled:opacity-40"
-    disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
-    onClick={() => handlePromotion(t)}
-  >
-    <span
-      className="text-3xl leading-none text-neutral-600"
-      style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
+  {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
+    <button
+      key={t}
+      className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+      disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
+      onClick={() => handlePromotion(t)}
     >
-      {pieceGlyph(t)}
-    </span>
-  </button>
-))}
+      <span
+        className="text-3xl leading-none"
+        style={{
+          fontFamily: "'Noto Chess','DejaVu Sans',serif",
+          // white side promotes → light piece, black side → dark piece
+          color:
+            gs.promotion?.color === "white"
+              ? "#f5f5f5" // same as your white pieces
+              : "#111111", // same as your black pieces
+        }}
+      >
+        {pieceGlyph(t)}
+      </span>
+    </button>
+  ))}
 
             </div>
             <div className="mt-3 text-sm opacity-80">
