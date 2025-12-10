@@ -1806,6 +1806,7 @@ const hidesBlue =
             gs.promotion?.color === "white"
               ? "#f5f5f5" 
               : "#111111", 
+              backgroundColor:
             gs.promotion?.color === "white"
         ? "#e5e7eb"  
         : "#1f2937", 
