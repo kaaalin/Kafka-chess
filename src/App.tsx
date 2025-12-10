@@ -1787,7 +1787,7 @@ const hidesBlue =
         {/* Promotion modal */}
         {gs.promotion && (
           <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
-            <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px] shadow-2xl">
+            <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px]">
               <div className="text-lg font-semibold mb-2">Promote pawn</div>
               <div className="grid grid-cols-4 gap-2">
   {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
@@ -1808,7 +1808,7 @@ const hidesBlue =
               : "#111111", 
               backgroundColor:
             gs.promotion?.color === "white"
-        ? "#e5e7eb"  
+        ? "#000000"  
         : "#1f2937", 
         }}
       >
@@ -2163,7 +2163,7 @@ return (
       {/* Promotion modal (shared) */}
       {gs.promotion && (
         <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
-          <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px] shadow-2xl">
+          <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px]">
             <div className="text-lg font-semibold mb-2">Promote pawn</div>
             <div className="grid grid-cols-4 gap-2">
   {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
@@ -2181,8 +2181,8 @@ return (
          
            backgroundColor:
       gs.promotion?.color === "white"
-        ? "#e5e7eb"  // light square for white promotion
-        : "#1f2937", // dark square for black promotion
+        ? "#000000"  // light square for white promotion
+        : "#ffffff", // dark square for black promotion
           color:
             gs.promotion?.color === "white"
               ? "#f5f5f5" 
