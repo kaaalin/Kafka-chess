@@ -1798,7 +1798,7 @@ const hidesBlue =
       onClick={() => handlePromotion(t)}
     >
       <span
-        className="text-3xl leading-none"
+        className="text-3xl leading-none shadow"
         style={{
           fontFamily: "'Noto Chess','DejaVu Sans',serif",
           // white side promotes → light piece, black side → dark piece
@@ -2170,7 +2170,7 @@ return (
       onClick={() => handlePromotion(t)}
     >
       <span
-        className="text-3xl leading-none"
+        className="text-3xl leading-none shadow"
         style={{
           fontFamily: "'Noto Chess','DejaVu Sans',serif",
           // white side promotes → light piece, black side → dark piece
