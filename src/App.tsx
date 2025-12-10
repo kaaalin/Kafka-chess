@@ -1793,12 +1793,12 @@ const hidesBlue =
               {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
   <button
     key={t}
-    className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+    className="p-3 rounded-xl bg-neutral-100 text-neutral-900 disabled:opacity-40"
     disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
     onClick={() => handlePromotion(t)}
   >
     <span
-      className="text-3xl leading-none text-neutral-700"
+      className="text-3xl leading-none text-neutral-400"
       style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
     >
       {pieceGlyph(t)}
@@ -2158,12 +2158,12 @@ return (
              {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
   <button
     key={t}
-    className="p-3 rounded-xl bg-neutral-200 text-neutral-900 disabled:opacity-40"
+    className="p-3 rounded-xl bg-neutral-100 text-neutral-900 disabled:opacity-40"
     disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
     onClick={() => handlePromotion(t)}
   >
     <span
-      className="text-3xl leading-none text-neutral-700"
+      className="text-3xl leading-none text-neutral-400"
       style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
     >
       {pieceGlyph(t)}
