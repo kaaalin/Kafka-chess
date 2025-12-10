@@ -2177,13 +2177,16 @@ return (
         style={{
           fontFamily: "'Noto Chess','DejaVu Sans',serif",
           // white side promotes → light piece, black side → dark piece
+         
+           backgroundColor:
+      gs.promotion?.color === "white"
+        ? "#e5e7eb"  // light square for white promotion
+        : "#1f2937", // dark square for black promotion
           color:
             gs.promotion?.color === "white"
               ? "#f5f5f5" 
               : "#111111", 
-            gs.promotion?.color === "white"
-        ? "#e5e7eb"  
-        : "#1f2937", 
+
         }}
       >
         {pieceGlyph(t)}
