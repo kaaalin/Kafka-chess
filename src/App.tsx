@@ -1809,7 +1809,7 @@ const hidesBlue =
               backgroundColor:
             gs.promotion?.color === "white"
         ? "#000000"  
-        : "#111111", 
+        : "#ffffff", 
         }}
       >
         {pieceGlyph(t)}
