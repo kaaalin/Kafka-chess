@@ -1798,7 +1798,7 @@ const hidesBlue =
     onClick={() => handlePromotion(t)}
   >
     <span
-      className="text-3xl leading-none"
+      className="text-3xl leading-none text-neutral-700"
       style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
     >
       {pieceGlyph(t)}
@@ -2163,7 +2163,7 @@ return (
     onClick={() => handlePromotion(t)}
   >
     <span
-      className="text-3xl leading-none"
+      className="text-3xl leading-none text-neutral-700"
       style={{ fontFamily: "'Noto Chess','DejaVu Sans',serif" }}
     >
       {pieceGlyph(t)}
