@@ -1520,10 +1520,7 @@ const hidesBlue =
                     className={`relative aspect-square ${
                       isSel ? "outline outline-4 outline-emerald-400/80" : ""
                     }`}
-                 style={{
-  background: woodSquareBg(f, r),
-  boxShadow: "inset 0 0 6px rgba(0,0,0,0.15)",
-}}
+                 style={{ background: woodSquareBg(f, r) }}
                   >
                     {isFrom && (
                       <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
@@ -1953,10 +1950,7 @@ return (
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e, sq)}
                 className={`relative w-20 h-20 ${isSel ? "outline outline-4 outline-emerald-400/80" : ""}`}
-               style={{
-  background: woodSquareBg(f, r),
-  boxShadow: "inset 0 0 6px rgba(0,0,0,0.15)",
-}}
+               style={{ background: woodSquareBg(f, r) }}
               >
                 {isFrom && (
                   <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
