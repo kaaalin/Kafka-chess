@@ -1889,11 +1889,11 @@ return (
       </div>
     )}
   </div>
-  <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
+  <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
 
-            <span>Mode</span>
+            <span min-w-0>Mode</span>
             <select
-              className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
               value={gs.ai.mode}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
             >
@@ -1901,10 +1901,10 @@ return (
               <option value="cpu">Human vs Computer</option>
             </select>
           </label>
-          <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
-            <span>Computer plays</span>
+          <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
+            <span min-w-0>Computer plays</span>
             <select
-              className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
               value={gs.ai.cpuPlays}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
             >
@@ -1912,10 +1912,10 @@ return (
               <option value="black">Black</option>
             </select>
           </label>
-          <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
-            <span>Level</span>
+          <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
+            <spanmin-w-0>Level</span>
             <select
-              className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
               value={gs.ai.level}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
             >
