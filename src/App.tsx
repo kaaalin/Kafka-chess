@@ -1875,7 +1875,7 @@ return (
             {gs.message}
           </div>
         )}
-        <div className="w-60 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2 mx-6">
+        <div className="w-60 p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2 gap-3">
   <div className="flex items-center justify-between text-sm">
     <div className="font-semibold">Computer opponent</div>
     {isCpuThinking && (
