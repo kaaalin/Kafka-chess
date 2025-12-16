@@ -1456,11 +1456,11 @@ const isCpuThinking =
         </div>
       )}
     </div>
-    <label className="flex items-center justify-between gap-2 text-sm">
+    <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
 
               <span>Mode</span>
               <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
+                className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
                 value={gs.ai.mode}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
               >
@@ -1468,10 +1468,10 @@ const isCpuThinking =
                 <option value="cpu">Human vs Computer</option>
               </select>
             </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
+            <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
               <span>Computer plays</span>
               <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
+                className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
                 value={gs.ai.cpuPlays}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
               >
@@ -1479,10 +1479,10 @@ const isCpuThinking =
                 <option value="black">Black</option>
               </select>
             </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
+            <label className="grid grid-cols-[110px_1fr] items-center gap-2 text-sm">
               <span>Level</span>
               <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
+                className="w-full bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
               >
