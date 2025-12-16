@@ -1897,8 +1897,8 @@ return (
               value={gs.ai.mode}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
             >
-              <option value="human">Human vs Human</option>
-              <option value="cpu">Human vs Computer</option>
+              <option value="human">Human x Human</option>
+              <option value="cpu">Human x Engine</option>
             </select>
           </label>
           <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
