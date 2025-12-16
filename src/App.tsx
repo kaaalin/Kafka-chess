@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 
 type FileLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
@@ -1496,10 +1497,15 @@ const isCpuThinking =
 
         {/* Row 4: Board */}
         <div className="flex justify-center mt-0">
-          <div
-            className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full"
-            style={{ border: "4px solid #3b2f2f" }}
-          >
+       <div
+  className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full relative"
+  style={{
+    border: "none",
+    backgroundImage: "url(/wood-board.png)",
+    backgroundSize: "100% 100%",
+    backgroundPosition: "center",
+  }}
+>
             {rankOrder.map((r) =>
               fileOrder.map((f) => {
                 const sq = gs.board.find((s) => s.file === f && s.rank === r)!;
@@ -1520,7 +1526,7 @@ const hidesBlue =
                     className={`relative aspect-square ${
                       isSel ? "outline outline-4 outline-emerald-400/80" : ""
                     }`}
-                 style={{ background: woodSquareBg(f, r) }}
+                style={{ background: "transparent" }}
                   >
                     {isFrom && (
                       <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
@@ -1770,7 +1776,7 @@ const hidesBlue =
               </ol>
 
               <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
+                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
               </p>
                      <p className="mt-4 opacity-90">
                 *Special thanks to Theodore De Marville for his sharp and quick critical thinking, and H.G.Muller who dialectically  helped refining some end game rules - especially winning by three-fold repetition.
@@ -1928,10 +1934,15 @@ return (
       </div>
 
       {/* Center: board */}
-      <div
-        className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl"
-        style={{ border: "4px solid #3b2f2f" }}
-      >
+     <div
+  className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full relative"
+  style={{
+    border: "none",
+    backgroundImage: "url(/wood-board.png)",
+    backgroundSize: "100% 100%",
+    backgroundPosition: "center",
+  }}
+>
         {rankOrder.map((r) =>
           fileOrder.map((f) => {
             const sq = gs.board.find((s) => s.file === f && s.rank === r)!;
@@ -1950,7 +1961,7 @@ return (
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e, sq)}
                 className={`relative w-20 h-20 ${isSel ? "outline outline-4 outline-emerald-400/80" : ""}`}
-               style={{ background: woodSquareBg(f, r) }}
+               style={{ background: "transparent" }}
               >
                 {isFrom && (
                   <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
@@ -2150,7 +2161,7 @@ return (
               </ol>
 
               <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
+                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
               </p>
               <p className="mt-2 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
