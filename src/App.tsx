@@ -1071,10 +1071,15 @@ function StockView({
   );
 }
 
-const BlueSymbol = ({ type }: { type: PieceType }) => (
+const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   <svg
     className="absolute inset-0 w-full h-full pointer-events-none"
     viewBox="0 0 100 100"
+    style={
+      flip
+        ? { transform: "rotate(180deg)", transformOrigin: "50% 50%" }
+        : undefined
+    }
   >
     <text
       x="50"
@@ -1090,6 +1095,7 @@ const BlueSymbol = ({ type }: { type: PieceType }) => (
     </text>
   </svg>
 );
+
 
 const Piece = ({ occ }: { occ: Extract<Occupant, { kind: "piece" }> }) => {
   const color = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
@@ -1531,7 +1537,11 @@ const hidesBlue =
 
 
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} />
+  <BlueSymbol
+  type={sq.blueSymbol}
+  flip={gs.ai.mode === "human" && (r === 5 || r === 6)}
+/>
+
 )}
 
                     {sq.occupant?.kind === "metamorph" && (
@@ -1961,7 +1971,10 @@ return (
 
               
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} />
+<BlueSymbol
+  type={sq.blueSymbol}
+  flip={gs.ai.mode === "human" && (r === 5 || r === 6)}
+/>
 )}
 
                 {sq.occupant?.kind === "metamorph" && (
