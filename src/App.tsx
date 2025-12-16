@@ -1913,7 +1913,7 @@ return (
             </select>
           </label>
           <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
-            <spanmin-w-0>Level</span>
+            <span min-w-0>Level</span>
             <select
               className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
               value={gs.ai.level}
