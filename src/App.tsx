@@ -562,7 +562,7 @@ function enforceReturnOrQuietus(gs: GameState): GameState {
 }
 
 function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState {
-  if (gs.winner) return gs;
+if (gs.winReason) return gs;
 
   // NEW: remember if each side had a king before this move
   const hadKingBefore: { white: boolean; black: boolean } = {
@@ -1234,7 +1234,7 @@ const handleRulesTouchEnd = () => {
   }, []);
 
   useEffect(() => {
-    if (gs.winner || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
+    if (gs.winReason || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
 
     if (gs.promotion && gs.promotion.color === gs.ai.cpuPlays) {
       setGs((p) => applyPromotionChoice(p, aiBestPromotion(p, p.ai.cpuPlays)));
@@ -1243,7 +1243,7 @@ const handleRulesTouchEnd = () => {
 
     const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
     return () => window.clearTimeout(id);
-  }, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winner]);
+  }, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winReason]);
 
   const aiBestPromotion = (st: GameState, c: Color): PieceType => {
     for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
@@ -1308,6 +1308,7 @@ const handleRulesTouchEnd = () => {
 
   const onDrop = (e: React.DragEvent, sq: Square) => {
     e.preventDefault();
+     if (gameOver) return;
     if (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays) return;
     const fromId = dragFrom.current || (e.dataTransfer.getData("text/plain") as SquareId);
     if (!fromId) return;
@@ -1316,7 +1317,8 @@ const handleRulesTouchEnd = () => {
   };
 
  const clickMove = (sq: Square) => {
-  if (gs.winner || (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays)) return;
+  if (gameOver || (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays)) return;
+
 
   // Nothing selected yet → try to select a piece
   if (!gs.selected) {
@@ -1392,10 +1394,11 @@ const handleRulesTouchEnd = () => {
 
   const rankOrder = flipped ? [...RANKS].slice().reverse() : RANKS;
   const fileOrder = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
+  const gameOver = gs.winReason !== null;
 const isCpuThinking =
   gs.ai.mode === "cpu" &&
   gs.turn === gs.ai.cpuPlays &&
-  !gs.winner;
+!gs.winReason;
   
   // MOBILE LAYOUT
   if (isMobile) {
