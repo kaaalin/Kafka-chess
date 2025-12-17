@@ -1237,17 +1237,16 @@ const handleRulesTouchEnd = () => {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  useEffect(() => {
-    if (gs.winReason || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
+useEffect(() => {
+  // If *any* promotion dialog is open, don't let the CPU move yet.
+  if (gs.promotion) return;
 
-    if (gs.promotion && gs.promotion.color === gs.ai.cpuPlays) {
-      setGs((p) => applyPromotionChoice(p, aiBestPromotion(p, p.ai.cpuPlays)));
-      return;
-    }
+  if (gs.winReason || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
 
-    const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
-    return () => window.clearTimeout(id);
-  }, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winReason]);
+  const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
+  return () => window.clearTimeout(id);
+}, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winReason]);
+
 
   const aiBestPromotion = (st: GameState, c: Color): PieceType => {
     for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
