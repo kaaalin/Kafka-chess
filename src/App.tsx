@@ -1467,10 +1467,15 @@ const isCpuThinking =
       {isCpuThinking && (
         <div className="flex items-center gap-1 text-[10px] tracking-[0.18em] text-white">
           <img
-            src="/cover-bmac.png"
-            alt="CPU thinking"
-            className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
-          />
+  src="/cover-bmac.png"
+  alt="CPU thinking"
+  className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
+  style={{
+    filter: "none",
+    colorScheme: "light",
+  }}
+/>
+
           <span>thinking …</span>
         </div>
       )}
@@ -1902,11 +1907,16 @@ return (
     <div className="font-semibold">Computer opponent</div>
     {isCpuThinking && (
       <div className="flex items-center text-[10px] tracking-[0.18em] text-white">
-        <img
-          src="/cover-bmac.png"
-          alt="CPU thinking"
-          className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
-        />
+       <img
+  src="/cover-bmac.png"
+  alt="CPU thinking"
+  className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
+  style={{
+    filter: "none",
+    colorScheme: "light",
+  }}
+/>
+
         <span>thinking…</span>
       </div>
     )}
