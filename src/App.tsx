@@ -1071,10 +1071,15 @@ function StockView({
   );
 }
 
-const BlueSymbol = ({ type }: { type: PieceType }) => (
+const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   <svg
     className="absolute inset-0 w-full h-full pointer-events-none"
     viewBox="0 0 100 100"
+    style={
+      flip
+        ? { transform: "rotate(180deg)", transformOrigin: "50% 50%" }
+        : undefined
+    }
   >
     <text
       x="50"
@@ -1091,18 +1096,26 @@ const BlueSymbol = ({ type }: { type: PieceType }) => (
   </svg>
 );
 
-const Piece = ({ occ }: { occ: Extract<Occupant, { kind: "piece" }> }) => {
+
+const Piece = ({
+  occ,
+  flip,
+}: {
+  occ: Extract<Occupant, { kind: "piece" }>;
+  flip?: boolean;
+}) => {
   const color = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
   return (
-    <div
-      className="absolute inset-0 flex items-center justify-center"
-      style={{ zIndex: 2 }}
-    >
+    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
       <div className="w-[80%] h-[80%] flex items-center justify-center" draggable>
         <svg
           viewBox="0 0 100 100"
           className="w-full h-full"
-          style={{ filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))" }}
+          style={{
+            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
+            transform: flip ? "rotate(180deg)" : undefined,
+            transformOrigin: "50% 50%",
+          }}
         >
           <text
             x="50"
@@ -1146,6 +1159,9 @@ export default function App() {
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const hvhFlipRank = (rank: number) =>
+  gs.ai.mode === "human" &&
+  ((flipped && (rank === 5 || rank === 6)) || (!flipped && (rank === 3 || rank === 4)));
   const [coffeeImgFailed, setCoffeeImgFailed] = useState(false);
   const [isIosSafari, setIsIosSafari] = useState(false);
  const [isMobile, setIsMobile] = useState(() => {
@@ -1961,7 +1977,7 @@ return (
 
               
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} />
+  <BlueSymbol type={sq.blueSymbol} flip={hvhFlipRank(r)} />
 )}
 
                 {sq.occupant?.kind === "metamorph" && (
@@ -1972,7 +1988,10 @@ return (
 
                 {sq.occupant?.kind === "piece" && (
                   <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                    <Piece occ={sq.occupant} />
+<Piece
+  occ={sq.occupant}
+  flip={hvhFlipRank(r) && !!sq.blueSymbol && r >= 3 && r <= 6}
+/>
                   </div>
                 )}
               </div>
