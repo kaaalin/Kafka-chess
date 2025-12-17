@@ -931,7 +931,7 @@ function pickAiMove(gs: GameState) {
   let bn = moves[0].next;
   for (const mv of moves) {
 const depth =
-  ai.level === "Very Hard" ? 3 :
+  ai.level === "Very Hard" ? 2 :
   1; // Hard = 1
 
 const sc = minimax(mv.next, depth, -Infinity, Infinity, false, c);    if (sc > best) {
