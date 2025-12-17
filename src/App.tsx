@@ -515,16 +515,19 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
   if (out.winReason) return out;
 
   // Promotion can create a new checking line; announce it.
-  const opponent: Color = out.turn;
-const ksq = findKingSquare(out, opponent);
-if (!ksq) return out;
+ const opponent: Color = out.turn;
 
-const attackerHasKing = !!findKingSquare(out, color);
+const ksq = findKingSquare(out, opponent);
+if (ksq === null) return out;          // ✅ hard null guard
+
+const { file, rank } = ksq;            // ✅ now TS knows these exist
+
+const attackerHasKing = findKingSquare(out, color) !== null;
 const prot = out.kingProtectedUntil[opponent];
 const kingProtectedNow = prot !== null && out.moveNumber === prot;
 
 if (attackerHasKing && !kingProtectedNow) {
-  const inCheck = isSquareAttacked(out, ksq.file, ksq.rank, color);
+  const inCheck = isSquareAttacked(out, file, rank, color);
   if (inCheck) out.message = `Check on ${opponent}!`;
 }
 
