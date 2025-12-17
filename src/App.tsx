@@ -507,7 +507,27 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
   };
   next.promotion = null;
 
-  return applyAutoTransforms(next).newGs;
+let promoted = applyAutoTransforms(next).newGs;
+
+// After promotion, it's already opponent's turn (turn was flipped in performMove),
+// so last mover is the opposite color:
+const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
+
+const opponent: Color = promoted.turn;
+const ksq = findKingSquare(promoted, opponent);
+
+if (ksq) {
+  const attackerHasKing = !!findKingSquare(promoted, lastMoverColor);
+  const prot = promoted.kingProtectedUntil[opponent];
+  const kingProtectedNow = prot !== null && promoted.moveNumber === prot;
+
+  if (attackerHasKing && !kingProtectedNow) {
+    const inCheck = isSquareAttacked(promoted, ksq.file, ksq.rank, lastMoverColor);
+    if (inCheck) promoted.message = `Check on ${opponent}!`;
+  }
+}
+
+return promoted;
 }
 
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
@@ -1389,8 +1409,26 @@ useEffect(() => {
     };
     next.promotion = null;
 
-    setGs(applyAutoTransforms(next).newGs);
-  };
+setGs(() => {
+  let promoted = applyAutoTransforms(next).newGs;
+
+  const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
+  const opponent: Color = promoted.turn;
+  const ksq = findKingSquare(promoted, opponent);
+
+  if (ksq) {
+    const attackerHasKing = !!findKingSquare(promoted, lastMoverColor);
+    const prot = promoted.kingProtectedUntil[opponent];
+    const kingProtectedNow = prot !== null && promoted.moveNumber === prot;
+
+    if (attackerHasKing && !kingProtectedNow) {
+      const inCheck = isSquareAttacked(promoted, ksq.file, ksq.rank, lastMoverColor);
+      if (inCheck) promoted.message = `Check on ${opponent}!`;
+    }
+  }
+
+  return promoted;
+});  };
 
   const whiteStock = gs.stock.white;
   const blackStock = gs.stock.black;
