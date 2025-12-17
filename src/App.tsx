@@ -1520,14 +1520,16 @@ useEffect(() => {
             <label className="flex items-center justify-between gap-2 text-sm">
               <span>Level</span>
               <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
+                 className="bg-neutral-900 border border-neutral-600 rounded px-3 py-1 text-sm text-right"
+  style={{ direction: "rtl" }}
+                
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
               >
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-                <option>Very Hard</option>
+                <option style={{ direction: "ltr" }}>Easy</option>
+                <option style={{ direction: "ltr" }}>Medium</option>
+                <option style={{ direction: "ltr" }}>Hard</option>
+                <option style={{ direction: "ltr" }}>Very Hard</option>
               </select>
             </label>
           </div>
@@ -1962,14 +1964,15 @@ return (
           <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
             <span min-w-0>Level</span>
             <select
-              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
+              className="bg-neutral-900 border border-neutral-600 rounded px-3 py-1 text-sm text-right"
+  style={{ direction: "rtl" }}
               value={gs.ai.level}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
             >
-              <option>Easy</option>
-              <option>Medium</option>
-              <option>Hard</option>
-              <option>Very Hard</option>
+              <option style={{ direction: "ltr" }}>Easy</option>
+              <option style={{ direction: "ltr" }}>Medium</option>
+              <option style={{ direction: "ltr" }}>Hard</option>
+              <option style={{ direction: "ltr" }}>Very Hard</option>
             </select>
           </label>
         </div>
