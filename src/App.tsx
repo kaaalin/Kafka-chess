@@ -1405,7 +1405,7 @@ useEffect(() => {
   if (isCpuThinking) {
     setShowThinking(true);
   } else {
-    const t = window.setTimeout(() => setShowThinking(false), 300);
+    const t = window.setTimeout(() => setShowThinking(false), 150);
     return () => window.clearTimeout(t);
   }
 }, [isCpuThinking]);
