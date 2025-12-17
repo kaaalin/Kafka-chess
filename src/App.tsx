@@ -1401,7 +1401,8 @@ useEffect(() => {
 const isCpuThinking =
   gs.ai.mode === "cpu" &&
   gs.turn === gs.ai.cpuPlays &&
-!gs.winReason;
+  !gs.winReason &&
+  !(gs.promotion && gs.promotion.color !== gs.ai.cpuPlays);
   
 useEffect(() => {
   if (isCpuThinking) {
