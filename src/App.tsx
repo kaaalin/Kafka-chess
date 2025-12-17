@@ -508,31 +508,6 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
   next.promotion = null;
 
   return applyAutoTransforms(next).newGs;
-
-  const out = applyAutoTransforms(next).newGs;
-
-  // If game ended during transforms, don't overwrite its message.
-  if (out.winReason) return out;
-
-  // Promotion can create a new checking line; announce it.
- const opponent: Color = out.turn;
-
-const ksq = findKingSquare(out, opponent);
-if (ksq === null) return out;          // ✅ hard null guard
-
-const { file, rank } = ksq;            // ✅ now TS knows these exist
-
-const attackerHasKing = findKingSquare(out, color) !== null;
-const prot = out.kingProtectedUntil[opponent];
-const kingProtectedNow = prot !== null && out.moveNumber === prot;
-
-if (attackerHasKing && !kingProtectedNow) {
-  const inCheck = isSquareAttacked(out, file, rank, color);
-  if (inCheck) out.message = `Check on ${opponent}!`;
-}
-
-
-  return out;
 }
 
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
