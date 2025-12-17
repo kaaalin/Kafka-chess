@@ -1159,6 +1159,7 @@ export default function App() {
   const testsOnce = useRef(false);
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [showThinking, setShowThinking] = useState(false);
   const hvhFlipRank = (rank: number) =>
   gs.ai.mode === "human" &&
   ((flipped && (rank === 5 || rank === 6)) || (!flipped && (rank === 3 || rank === 4)));
@@ -1400,6 +1401,16 @@ const isCpuThinking =
   gs.turn === gs.ai.cpuPlays &&
 !gs.winReason;
   
+useEffect(() => {
+  if (isCpuThinking) {
+    setShowThinking(true);
+  } else {
+    const t = window.setTimeout(() => setShowThinking(false), 300);
+    return () => window.clearTimeout(t);
+  }
+}, [isCpuThinking]);
+
+  
   // MOBILE LAYOUT
   if (isMobile) {
     return (
@@ -1464,7 +1475,7 @@ const isCpuThinking =
   <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
     <div className="flex items-center justify-between text-sm">
       <div className="font-semibold">Computer opponent</div>
-      {isCpuThinking && (
+      {showThinking && (
         <div className="flex items-center gap-1 text-[10px] tracking-[0.18em] text-white">
           <img
   src="/cover-bmac.png"
@@ -1905,7 +1916,7 @@ return (
         <div className="w-full p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
   <div className="flex items-center justify-between text-sm">
     <div className="font-semibold">Computer opponent</div>
-    {isCpuThinking && (
+    {showThinking && (
       <div className="flex items-center text-[10px] tracking-[0.18em] text-white">
        <img
   src="/cover-bmac.png"
