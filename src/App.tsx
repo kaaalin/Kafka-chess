@@ -1547,7 +1547,7 @@ const hidesBlue =
 
 
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} />
+  <BlueSymbol type={sq.blueSymbol} flip={hvhFlipRank(r)} />
 )}
 
                     {sq.occupant?.kind === "metamorph" && (
@@ -1558,7 +1558,10 @@ const hidesBlue =
 
                     {sq.occupant?.kind === "piece" && (
                       <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                        <Piece occ={sq.occupant} />
+                        <Piece
+  occ={sq.occupant}
+  flip={hvhFlipRank(r) && !!sq.blueSymbol && r >= 3 && r <= 6}
+/>
                       </div>
                     )}
                   </div>
@@ -1977,7 +1980,7 @@ return (
 
               
 {sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} flip={hvhFlipRank(r)} />
+  <BlueSymbol type={sq.blueSymbol} />
 )}
 
                 {sq.occupant?.kind === "metamorph" && (
@@ -1988,10 +1991,7 @@ return (
 
                 {sq.occupant?.kind === "piece" && (
                   <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-<Piece
-  occ={sq.occupant}
-  flip={hvhFlipRank(r) && !!sq.blueSymbol && r >= 3 && r <= 6}
-/>
+<Piece occ={sq.occupant} />
                   </div>
                 )}
               </div>
