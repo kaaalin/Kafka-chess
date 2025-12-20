@@ -1558,15 +1558,16 @@ useEffect(() => {
             <label className="flex items-center justify-between gap-2 text-sm">
               <span>Level</span>
               <select
-                 className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-right"
-                
+                 className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-left"
+                    style={{ textAlignLast: "right" }}
+
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
               >
-                <option className="text-left">Easy</option>
-                <option className="text-left">Medium</option>
-                <option className="text-left">Hard</option>
-                <option className="text-left">Very Hard</option>
+                <option >Easy</option>
+                <option >Medium</option>
+                <option >Hard</option>
+                <option>Very Hard</option>
               </select>
             </label>
           </div>
