@@ -1573,7 +1573,7 @@ useEffect(() => {
           </div>
         </div>
 {/* Mobile-only top message bar (human vs human only) */}
-{!gs.vsCpu && (
+{gs.ai.mode === "human" && (
   <div className="sm:hidden flex justify-center mb-2 rotate-180">
     <div className="w-full max-w-[min(90vw,40rem)] rotate-180">
       <button
@@ -1594,6 +1594,11 @@ useEffect(() => {
             Turn: <b className="capitalize">{gs.turn}</b>
           </>
         )}
+      </button>
+    </div>
+  </div>
+)}
+
       </button>
     </div>
   </div>
