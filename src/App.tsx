@@ -1572,7 +1572,7 @@ useEffect(() => {
             </label>
           </div>
         </div>
-{/* Mobile-only top message bar (human vs human only) */}
+
 {/* Mobile-only top message bar (human vs human; readable from the top side) */}
 {gs.ai.mode === "human" && (
   <div className="sm:hidden flex justify-center mb-2">
@@ -1590,7 +1590,7 @@ useEffect(() => {
         <div className="rotate-180">
           {gs.message ? (
             <>
-              {gs.message} ({gs.turn})
+              {gs.message} ({gs.turn} turn)
             </>
           ) : (
             <>
@@ -1681,7 +1681,7 @@ const hidesBlue =
 <div className="w-full text-center text-[11px] sm:text-xs">
   {gs.message ? (
     <>
-      {gs.message} ({gs.turn})
+      {gs.message} ({gs.turn} turn)
     </>
   ) : (
     <>
