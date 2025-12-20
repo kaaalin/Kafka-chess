@@ -1559,7 +1559,6 @@ useEffect(() => {
               <span>Level</span>
               <select
                  className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-right"
-  
                 
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
@@ -1567,7 +1566,7 @@ useEffect(() => {
                 <option>Easy</option>
                 <option>Medium</option>
                 <option>Hard</option>
-                <option>Very Hard</option>
+                <option text-center>Very Hard</option>
               </select>
             </label>
           </div>
@@ -2036,8 +2035,7 @@ return (
             <span min-w-0>Level</span>
             <select
               className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-right"
- 
-              value={gs.ai.level}
+               value={gs.ai.level}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
             >
               <option>Easy</option>
