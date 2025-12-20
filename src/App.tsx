@@ -1563,10 +1563,10 @@ useEffect(() => {
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
               >
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-                <option>Very Hard</option>
+                <option className="text-left">Easy</option>
+                <option className="text-left">Medium</option>
+                <option className="text-left">Hard</option>
+                <option className="text-left">Very Hard</option>
               </select>
             </label>
           </div>
