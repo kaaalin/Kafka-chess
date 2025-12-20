@@ -1558,7 +1558,7 @@ useEffect(() => {
             <label className="flex items-center justify-between gap-2 text-sm">
               <span>Level</span>
               <select
-                 className="bg-neutral-900 border border-neutral-600 rounded px-3 py-1 text-sm text-right"
+                 className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
   style={{ direction: "rtl" }}
                 
                 value={gs.ai.level}
