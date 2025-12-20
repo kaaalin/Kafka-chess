@@ -131,7 +131,7 @@ interface GameState {
   message: string | null;
   winner: Color | null;
   winReason: string | null;
-  ai: { mode: "human" | "cpu"; cpuPlays: Color; level: "Easy" | "Medium" | "Hard" | "Very Hard" };
+  ai: { mode: "human" | "cpu"; cpuPlays: Color; level: "Easy" | "Medium" | "Hard" | "Master" };
   lastMove: { from: SquareId; to: SquareId; by: Color } | null;
   repetition: Record<string, number>;
 }
@@ -951,7 +951,7 @@ function pickAiMove(gs: GameState) {
   let bn = moves[0].next;
   for (const mv of moves) {
 const depth =
-  ai.level === "Very Hard" ? 2 :
+  ai.level === "Master" ? 2 :
   1; // Hard = 1
 
 const sc = minimax(mv.next, depth, -Infinity, Infinity, false, c);    if (sc > best) {
@@ -1567,7 +1567,7 @@ useEffect(() => {
                 <option >Easy</option>
                 <option >Medium</option>
                 <option >Hard</option>
-                <option>Very Hard</option>
+                <option>Master</option>
               </select>
             </label>
           </div>
@@ -2043,7 +2043,7 @@ return (
               <option>Easy</option>
               <option>Medium</option>
               <option>Hard</option>
-              <option>Very Hard</option>
+              <option>Master</option>
             </select>
           </label>
         </div>
