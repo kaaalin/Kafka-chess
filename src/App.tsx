@@ -2035,8 +2035,9 @@ return (
           <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
             <span min-w-0>Level</span>
             <select
-              className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-right"
-               value={gs.ai.level}
+              className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-center"
+              style={{ textAlignLast: "right" }}
+              value={gs.ai.level}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
             >
               <option>Easy</option>
