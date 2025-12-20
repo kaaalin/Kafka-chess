@@ -1573,9 +1573,10 @@ useEffect(() => {
           </div>
         </div>
 {/* Mobile-only top message bar (human vs human only) */}
+{/* Mobile-only top message bar (human vs human; readable from the top side) */}
 {gs.ai.mode === "human" && (
-  <div className="sm:hidden flex justify-center mb-2 rotate-180">
-    <div className="w-full max-w-[min(90vw,40rem)] rotate-180">
+  <div className="sm:hidden flex justify-center mb-2">
+    <div className="w-full max-w-[min(90vw,40rem)]">
       <button
         className={`w-full px-3 py-2 rounded-2xl text-[11px] text-center border
           ${
@@ -1585,15 +1586,18 @@ useEffect(() => {
           }`}
         disabled
       >
-        {gs.message ? (
-          <>
-            {gs.message} ({gs.turn})
-          </>
-        ) : (
-          <>
-            Turn: <b className="capitalize">{gs.turn}</b>
-          </>
-        )}
+        {/* Rotate the text 180° so the TOP-side player can read it */}
+        <div className="rotate-180">
+          {gs.message ? (
+            <>
+              {gs.message} ({gs.turn})
+            </>
+          ) : (
+            <>
+              Turn: <b className="capitalize">{gs.turn}</b>
+            </>
+          )}
+        </div>
       </button>
     </div>
   </div>
