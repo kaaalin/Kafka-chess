@@ -1564,10 +1564,10 @@ useEffect(() => {
                 value={gs.ai.level}
                 onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
               >
-                <option style={{ direction: "ltr" }}>Easy</option>
-                <option style={{ direction: "ltr" }}>Medium</option>
-                <option style={{ direction: "ltr" }}>Hard</option>
-                <option style={{ direction: "ltr" }}>Very Hard</option>
+                <option>Easy</option>
+                <option>Medium</option>
+                <option>Hard</option>
+                <option>Very Hard</option>
               </select>
             </label>
           </div>
@@ -2040,10 +2040,10 @@ return (
               value={gs.ai.level}
               onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
             >
-              <option style={{ direction: "ltr" }}>Easy</option>
-              <option style={{ direction: "ltr" }}>Medium</option>
-              <option style={{ direction: "ltr" }}>Hard</option>
-              <option style={{ direction: "ltr" }}>Very Hard</option>
+              <option>Easy</option>
+              <option>Medium</option>
+              <option>Hard</option>
+              <option>Very Hard</option>
             </select>
           </label>
         </div>
