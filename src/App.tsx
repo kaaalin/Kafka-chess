@@ -1599,10 +1599,6 @@ useEffect(() => {
   </div>
 )}
 
-      </button>
-    </div>
-  </div>
-)}
 
 
         {/* Row 4: Board */}
