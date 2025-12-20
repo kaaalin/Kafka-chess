@@ -1572,6 +1572,32 @@ useEffect(() => {
             </label>
           </div>
         </div>
+{/* Mobile-only top message bar (flipped vertically) */}
+<div className="sm:hidden flex justify-center mb-2 transform scale-y-[-1]">
+  <div className="w-full max-w-[min(90vw,40rem)]">
+    <button
+      className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
+        ${
+          gs.message
+            ? "bg-[#83b2be] text-black border-neutral-700"
+            : "bg-neutral-800 text-neutral-300 border-neutral-700"
+        }`}
+      disabled
+    >
+      <div className="w-full text-center text-[11px] sm:text-xs">
+        {gs.message ? (
+          <>
+            {gs.message} ({gs.turn})
+          </>
+        ) : (
+          <>
+            Turn: <b className="capitalize">{gs.turn}</b>
+          </>
+        )}
+      </div>
+    </button>
+  </div>
+</div>
 
         {/* Row 4: Board */}
         <div className="flex justify-center mt-0">
