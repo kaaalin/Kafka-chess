@@ -1566,7 +1566,7 @@ useEffect(() => {
                 <option>Easy</option>
                 <option>Medium</option>
                 <option>Hard</option>
-                <option text-center>Very Hard</option>
+                <option>Very Hard</option>
               </select>
             </label>
           </div>
