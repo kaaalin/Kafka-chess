@@ -798,21 +798,35 @@ if (
     newGs.winner = win.winner;
     newGs.winReason = win.reason;
     newGs.message = `Winner: ${win.winner} (${win.reason})`;
-  } else {
-    const opponent: Color = newGs.turn;
-    const ksq = findKingSquare(newGs, opponent);
-    if (ksq) {
-      const attackerHasKing = !!findKingSquare(newGs, lastMoverColor);
-      const prot = newGs.kingProtectedUntil[opponent];
-      const kingProtectedNow = prot !== null && newGs.moveNumber === prot;
-      if (attackerHasKing && !kingProtectedNow) {
-        const inCheck = isSquareAttacked(newGs, ksq.file, ksq.rank, lastMoverColor);
-        if (inCheck) {
-          newGs.message = `Check on ${opponent}!`;
-        }
+} else {
+  // STALEMATE
+  const stal = stalemateOutcome(newGs);
+  if (stal) {
+    newGs.winner = stal.winner;          // null = draw
+    newGs.winReason = stal.reason;
+    newGs.message =
+      stal.winner === null
+        ? `Draw: ${stal.reason}`
+        : `Winner: ${stal.winner} (${stal.reason})`;
+    return newGs;
+  }
+
+  // existing "Check on ..." logic
+  const opponent: Color = newGs.turn;
+  const ksq = findKingSquare(newGs, opponent);
+  if (ksq) {
+    const attackerHasKing = !!findKingSquare(newGs, lastMoverColor);
+    const prot = newGs.kingProtectedUntil[opponent];
+    const kingProtectedNow = prot !== null && newGs.moveNumber === prot;
+    if (attackerHasKing && !kingProtectedNow) {
+      const inCheck = isSquareAttacked(newGs, ksq.file, ksq.rank, lastMoverColor);
+      if (inCheck) {
+        newGs.message = `Check on ${opponent}!`;
       }
     }
   }
+}
+
 
   return newGs;
 }
@@ -2115,13 +2129,16 @@ return (
           <div className="text-xs opacity-70">Captured pieces · promotions revive from here if available</div>
         </div>
 
-        {gs.winner && (
-          <div className="mt-2 px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 font-semibold text-sm">
-            <span>Winner: </span>
-            <span className="capitalize">{gs.winner}</span>
-            {gs.winReason && <span> · {gs.winReason}</span>}
-          </div>
-        )}
+{gs.winReason && (
+  <div className="mt-2 px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 font-semibold text-sm">
+    <span>
+      {gs.winner === null ? "Draw" : "Winner:"}
+    </span>{" "}
+    {gs.winner !== null && <span className="capitalize">{gs.winner}</span>}
+    <span> · {gs.winReason}</span>
+  </div>
+)}
+
 
         <div className="mt-2 grid grid-cols-2 gap-3">
           <QuietusRow label="White" color="white" counts={gs.quietus.white} />
