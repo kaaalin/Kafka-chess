@@ -509,6 +509,18 @@ function applyPromotionChoice(state: GameState, type: PieceType) {
 
 let promoted = applyAutoTransforms(next).newGs;
 
+// ✅ STALEMATE CHECK (promotion bypasses performMove's end-of-move checks)
+const stal = stalemateOutcome(promoted);
+if (stal) {
+  promoted.winner = stal.winner; // null = draw
+  promoted.winReason = stal.reason;
+  promoted.message =
+    stal.winner === null
+      ? `Draw: ${stal.reason}`
+      : `Winner: ${stal.winner} (${stal.reason})`;
+  return promoted;
+}
+
 // After promotion, it's already opponent's turn (turn was flipped in performMove),
 // so last mover is the opposite color:
 const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
@@ -529,6 +541,7 @@ if (ksq) {
 
 return promoted;
 }
+
 
 function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
   if (capturedKing) return { winner: lastMover, reason: "king captured" };
@@ -1422,9 +1435,20 @@ useEffect(() => {
       returnByTurn: deadline,
     };
     next.promotion = null;
-
 setGs(() => {
   let promoted = applyAutoTransforms(next).newGs;
+
+  // ✅ STALEMATE CHECK (promotion does not run performMove's stalemate logic)
+  const stal = stalemateOutcome(promoted);
+  if (stal) {
+    promoted.winner = stal.winner; // null = draw
+    promoted.winReason = stal.reason;
+    promoted.message =
+      stal.winner === null
+        ? `Draw: ${stal.reason}`
+        : `Winner: ${stal.winner} (${stal.reason})`;
+    return promoted;
+  }
 
   const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
   const opponent: Color = promoted.turn;
@@ -1443,6 +1467,8 @@ setGs(() => {
 
   return promoted;
 });  };
+
+
 
   const whiteStock = gs.stock.white;
   const blackStock = gs.stock.black;
