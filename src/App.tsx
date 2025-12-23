@@ -958,7 +958,7 @@ function runSelfTests() {
   kTest.turn = "white";
   const res = detectWin(kTest, "black", null);
   console.assert(!!res && res!.winner === "black", "king detection when only black has king");
-}
+
 
 function ChrysalisGlyph({
   type,
