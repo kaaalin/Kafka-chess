@@ -24,7 +24,12 @@ const idFrom = (f: number, r: number): SquareId => `${FILES[f]}${r}` as SquareId
 const inBounds = (f: number, r: number) => f >= 0 && f < 8 && r >= 1 && r <= 8;
 
 function deepClone<T>(x: T): T {
-  return structuredClone(x);
+  // Fast in modern Chrome/Firefox/Safari; fallback for older.
+  // @ts-ignore
+  return typeof structuredClone === "function"
+    // @ts-ignore
+    ? structuredClone(x)
+    : JSON.parse(JSON.stringify(x));
 }
 
 const INITIAL_COUNTS: Record<PieceType, number> = {
