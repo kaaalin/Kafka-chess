@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import type { GameState } from "./ai";
+
 
 type FileLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
 type RankNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -57,7 +59,8 @@ const shade = (hex: string, d: number) => {
   b = s(b);
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 };
-
+const makeAiWorker = () =>
+  new Worker(new URL("./ai.worker.ts", import.meta.url), { type: "module" });
 const woodSquareBg = (f: number, r: number) => {
   const base = woodColor(f, r);
   return `linear-gradient(135deg, ${shade(base, 8)} 0%, ${base} 55%, ${shade(base, -6)} 100%)`;
@@ -857,93 +860,11 @@ function aiResolvePromotion(state: GameState, color: Color) {
   return state;
 }
 
-function generateMoves(gs: GameState, c: Color) {
-  const out: { from: SquareId; to: SquareId; next: GameState }[] = [];
-  const base = deepClone(gs);
-  base.turn = c;
-  const startMoveNumber = base.moveNumber;
-
-  for (const sq of base.board) {
-    const o = sq.occupant;
-    if (!o) continue;
-
-    if (o.kind === "metamorph" && o.color === c) {
-      const moves = legalMovesForMetamorph(base, sq);
-      for (const m of moves) {
-        const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 =
-          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        // Ignore illegal/no-op moves (moveNumber doesn't advance), but keep winning/check moves.
-        if (n2.moveNumber === startMoveNumber) continue;
-        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
-      }
-    } else if (o.kind === "piece" && o.color === c) {
-      const moves = legalMovesForPiece(base, sq);
-      for (const m of moves) {
-        const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 =
-          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        if (n2.moveNumber === startMoveNumber) continue;
-        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
-      }
-    }
-  }
-
-  return out;
-}
 
 
-function evaluate(gs: GameState, forC: Color) {
-  if (gs.winner) return gs.winner === forC ? 1e9 : -1e9;
 
-  const val: Record<PieceType, number> = {
-    K: 5000,
-    Q: 900,
-    R: 500,
-    B: 330,
-    N: 320,
-    P: 100,
-  };
 
-  let score = 0;
 
-  for (const sq of gs.board) {
-    const o = sq.occupant;
-    if (o && o.kind === "piece") {
-      const s = val[o.type];
-      score += o.color === forC ? s : -s;
-      if (sq.rank >= 3 && sq.rank <= 6) score += o.color === forC ? 4 : -4;
-    }
-  }
-
-  const my = generateMoves(gs, forC).length;
-  const op = generateMoves(gs, forC === "white" ? "black" : "white").length;
-
-  return score + (my - op) * 0.5;
-}
-
-function pickAiMove(gs: GameState) {
-  const { ai } = gs;
-  const c = ai.cpuPlays;
-  const moves = generateMoves(gs, c);
-  if (!moves.length) return gs;
-
-  if (ai.level === "Easy") {
-    return moves[Math.floor(Math.random() * moves.length)].next;
-  }
-
-  if (ai.level === "Medium") {
-    let b = -Infinity;
-    let bn = moves[0].next;
-    for (const m of moves) {
-      const s = evaluate(m.next, c);
-      if (s > b) {
-        b = s;
-        bn = m.next;
-      }
-    }
-    return bn;
-  }
 
   function minimax(
     st: GameState,
@@ -1212,6 +1133,9 @@ export default function App() {
   const dragFrom = useRef<SquareId | null>(null);
   const dragGhostRef = useRef<HTMLDivElement | null>(null);
   const testsOnce = useRef(false);
+  const workerRef = useRef<Worker | null>(null);
+  const aiBusyRef = useRef(false);
+  const aiTokenRef = useRef(0);
   const [showRules, setShowRules] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
@@ -1252,8 +1176,13 @@ const handleRulesTouchEnd = () => {
     setShowRules(false);
   }
 };
-  const newGame = () => setGs(initialGame());
-
+const newGame = () => {
+  // invalidate any pending worker result
+  aiTokenRef.current++;
+  aiBusyRef.current = false;
+  setShowThinking(false);
+  setGs(initialGame());
+};
   useEffect(() => {
   if (typeof navigator === "undefined") return;
 
@@ -1289,15 +1218,7 @@ const handleRulesTouchEnd = () => {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-useEffect(() => {
-  // If *any* promotion dialog is open, don't let the CPU move yet.
-  if (gs.promotion) return;
 
-  if (gs.winReason || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
-
-  const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
-  return () => window.clearTimeout(id);
-}, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winReason]);
 
 
   const aiBestPromotion = (st: GameState, c: Color): PieceType => {
@@ -1496,7 +1417,37 @@ useEffect(() => {
   }
 }, [isCpuThinking]);
 
-  
+useEffect(() => {
+  const w = makeAiWorker();
+  workerRef.current = w;
+
+  w.onmessage = (e: MessageEvent<any>) => {
+    const msg = e.data;
+
+    // ignore stale results (e.g. new game happened)
+    if (msg.token !== aiTokenRef.current) return;
+
+    aiBusyRef.current = false;
+    setShowThinking(false);
+
+    if (msg.type === "RESULT") {
+      setGs(msg.gs);
+    } else if (msg.type === "ERROR") {
+      console.error("AI worker error:", msg.message);
+    }
+  };
+
+  w.onerror = (err) => {
+    aiBusyRef.current = false;
+    setShowThinking(false);
+    console.error("Worker crashed:", err);
+  };
+
+  return () => {
+    w.terminate();
+    workerRef.current = null;
+  };
+}, []);  
   // MOBILE LAYOUT
   if (isMobile) {
     return (
