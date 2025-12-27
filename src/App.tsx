@@ -1805,6 +1805,7 @@ const hidesBlue =
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
                 game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
+                First published on 19th of October 2025. 
               </p>
 <img
   src="https://kafkachess.com/authors.JPG"
@@ -1933,7 +1934,7 @@ const hidesBlue =
                 <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
               </p>
                      <p className="mt-4 opacity-90">
-                *Special thanks to Theodore De Marville for his sharp and quick critical thinking, and H.G.Muller who dialectically  helped refining some end game rules - especially winning by three-fold repetition.
+                *Special thanks to H.G.Muller who dialectically helped refining some end game rules - especially winning by three-fold repetition, and Theodore De Marville for his quick critical thinking.
                </p>
               <p className="mt-4 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
@@ -2195,6 +2196,7 @@ return (
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
                 game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
+                First published on 19th of October 2025. 
               </p>
 <img
   src="https://kafkachess.com/authors.JPG"
@@ -2322,6 +2324,9 @@ return (
               <p className="mt-4 opacity-90">
                 <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
               </p>
+              <p className="mt-4 opacity-90">
+                *Special thanks to H.G.Muller who dialectically helped refining some end game rules - especially winning by three-fold repetition, and Theodore De Marville for his quick critical thinking.
+               </p>
               <p className="mt-2 text-sm opacity-70">
                 Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
               </p>
