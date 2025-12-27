@@ -1804,8 +1804,8 @@ const hidesBlue =
               <p className="mb-4 opacity-90">
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
-                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
-                First published on 19th of October 2025. 
+                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).<br>First published on 19th of October 2025. </br>
+                
               </p>
 <img
   src="https://kafkachess.com/authors.JPG"
@@ -2195,8 +2195,8 @@ return (
               <p className="mb-4 opacity-90">
                 This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
                 Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
-                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
-                First published on 19th of October 2025. 
+                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).<br>
+                First published on 19th of October 2025. </br>
               </p>
 <img
   src="https://kafkachess.com/authors.JPG"
