@@ -1,30 +1,23 @@
-// src/ai.worker.ts
-import { pickAiMove, GameState } from "./ai";
+import { pickAiMove } from "./engine";
+import type { GameState } from "./engine";
 
-// Messages FROM main thread
-type InMsg =
-  | { type: "COMPUTE"; gs: GameState; token: number };
-
-// Messages TO main thread
+type InMsg = { type: "THINK"; id: number; gs: GameState };
 type OutMsg =
-  | { type: "RESULT"; gs: GameState; token: number }
-  | { type: "ERROR"; message: string; token: number };
+  | { type: "RESULT"; id: number; gs: GameState }
+  | { type: "ERROR"; id: number; error: string };
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
-
-  if (msg.type !== "COMPUTE") return;
+  if (!msg || msg.type !== "THINK") return;
 
   try {
     const next = pickAiMove(msg.gs);
-    const out: OutMsg = { type: "RESULT", gs: next, token: msg.token };
-    (self as any).postMessage(out);
+    (self as any).postMessage({ type: "RESULT", id: msg.id, gs: next } satisfies OutMsg);
   } catch (err: any) {
-    const out: OutMsg = {
+    (self as any).postMessage({
       type: "ERROR",
-      message: err?.message ?? String(err),
-      token: msg.token,
-    };
-    (self as any).postMessage(out);
+      id: msg.id,
+      error: String(err?.message ?? err),
+    } satisfies OutMsg);
   }
 };
