@@ -858,7 +858,116 @@ function aiResolvePromotion(state: GameState, color: Color) {
 }
 
 function generateMoves(gs: GameState, c: Color) {
-  const out: { from: SquareId; to: SquareId; next: GameState }[] = [];
+  // Material values used ONLY for move ordering (not evaluation)
+  const val: Record<PieceType, number> = {
+    K: 5000,
+    Q: 900,
+    R: 500,
+    B: 330,
+    N: 320,
+    P: 100,
+  };
+
+  const out: { from: SquareId; to: SquareId; next: GameState; order: number }[] = [];
+  const base = deepClone(gs);
+  base.turn = c;
+  const startMoveNumber = base.moveNumber;
+
+  const other: Color = c === "white" ? "black" : "white";
+
+  // quick helpers for ordering
+  const squareById = (st: GameState, id: SquareId) => st.board.find((s) => s.id === id)!;
+
+  const givesCheck = (st: GameState) => {
+    const ksq = findKingSquare(st, other);
+    if (!ksq) return false;
+    // "check" only matters if attacker has a king and opponent isn't protected that turn (same as your rules)
+    const attackerHasKing = !!findKingSquare(st, c);
+    const prot = st.kingProtectedUntil[other];
+    const kingProtectedNow = prot !== null && st.moveNumber === prot;
+    if (!attackerHasKing || kingProtectedNow) return false;
+    return isSquareAttacked(st, ksq.file, ksq.rank, c);
+  };
+
+  const scoreMove = (before: GameState, from: SquareId, to: SquareId, after: GameState, after2: GameState) => {
+    let s = 0;
+
+    const fromSq = squareById(before, from);
+    const toSq = squareById(before, to);
+
+    // 1) Captures first (huge for pruning)
+    if (toSq.occupant && toSq.occupant.kind === "piece" && toSq.occupant.color !== c) {
+      const t = toSq.occupant.type;
+      s += 100000 + val[t]; // capture bonus + MVV
+      if (t === "K") s += 1000000; // king capture is decisive
+    }
+
+    // 2) Promotions (AI resolves immediately via aiResolvePromotion)
+    // If move opened promotion panel and aiResolvePromotion changed state, prefer it
+    if (after.promotion && after.promotion.color === c && !after2.promotion) {
+      s += 80000;
+    }
+
+    // 3) Transform / change type on Metamorphia card (your rules change piece type)
+    const beforeOcc = fromSq.occupant && fromSq.occupant.kind === "piece" ? fromSq.occupant.type : null;
+    const afterTo = squareById(after2, to);
+    const afterOcc = afterTo.occupant && afterTo.occupant.kind === "piece" ? afterTo.occupant.type : null;
+    if (beforeOcc && afterOcc && beforeOcc !== afterOcc) {
+      s += 20000 + (val[afterOcc] - val[beforeOcc]); // prefer “upgrade”
+    }
+
+    // 4) Giving check (in *your* rules)
+    if (givesCheck(after2)) s += 15000;
+
+    // 5) Small bonus: entering Metamorphia (ranks 3–6) is generally useful in your eval too
+    if (toSq.rank >= 3 && toSq.rank <= 6) s += 200;
+
+    // 6) Winning move
+    if (after2.winner === c) s += 10_000_000;
+
+    return s;
+  };
+
+  for (const sq of base.board) {
+    const o = sq.occupant;
+    if (!o) continue;
+
+    if (o.kind === "metamorph" && o.color === c) {
+      const moves = legalMovesForMetamorph(base, sq);
+      for (const m of moves) {
+        const to = idFrom(m.f, m.r);
+        const n = performMove(base, sq.id, to);
+        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
+
+        // Ignore illegal/no-op moves (same rule you already have)
+        if (n2.moveNumber === startMoveNumber) continue;
+
+        out.push({ from: sq.id, to, next: n2, order: scoreMove(base, sq.id, to, n, n2) });
+      }
+    } else if (o.kind === "piece" && o.color === c) {
+      const moves = legalMovesForPiece(base, sq);
+      for (const m of moves) {
+        const to = idFrom(m.f, m.r);
+        const n = performMove(base, sq.id, to);
+        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
+
+        if (n2.moveNumber === startMoveNumber) continue;
+
+        out.push({ from: sq.id, to, next: n2, order: scoreMove(base, sq.id, to, n, n2) });
+      }
+    }
+  }
+
+  // This is the key: GOOD moves first => alpha-beta cuts much more.
+  out.sort((a, b) => b.order - a.order);
+
+  // keep the original return shape
+  return out.map(({ from, to, next }) => ({ from, to, next }));
+}
+
+function countMovesFast(gs: GameState, c: Color) {
+  // same as generateMoves but returns only count and does not allocate/sort
+  let count = 0;
   const base = deepClone(gs);
   base.turn = c;
   const startMoveNumber = base.moveNumber;
@@ -871,25 +980,22 @@ function generateMoves(gs: GameState, c: Color) {
       const moves = legalMovesForMetamorph(base, sq);
       for (const m of moves) {
         const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 =
-          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        // Ignore illegal/no-op moves (moveNumber doesn't advance), but keep winning/check moves.
+        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
         if (n2.moveNumber === startMoveNumber) continue;
-        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
+        count++;
       }
     } else if (o.kind === "piece" && o.color === c) {
       const moves = legalMovesForPiece(base, sq);
       for (const m of moves) {
         const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 =
-          n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
+        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
         if (n2.moveNumber === startMoveNumber) continue;
-        out.push({ from: sq.id, to: idFrom(m.f, m.r), next: n2 });
+        count++;
       }
     }
   }
 
-  return out;
+  return count;
 }
 
 
@@ -916,8 +1022,9 @@ function evaluate(gs: GameState, forC: Color) {
     }
   }
 
-  const my = generateMoves(gs, forC).length;
-  const op = generateMoves(gs, forC === "white" ? "black" : "white").length;
+  const my = countMovesFast(gs, forC);
+const op = countMovesFast(gs, forC === "white" ? "black" : "white");
+
 
   return score + (my - op) * 0.5;
 }
