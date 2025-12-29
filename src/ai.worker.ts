@@ -33,6 +33,30 @@ interface GameState {
 // ⚠️ DO NOT paste rendering helpers or JSX-related code ⚠️
 
 // ----------------------------------------
+/// <reference lib="webworker" />
+
+// ---- types (copied from App.tsx) ----
+// type GameState, Move, Square, Piece, etc.
+
+
+// ---- PURE AI ENGINE (copied) ----
+function pickAiMove(gs: GameState): GameState {
+  // unchanged
+}
+
+function generateMoves(...) { ... }
+function evaluate(...) { ... }
+function minimax(...) { ... }
+function deepClone(...) { ... }
+function performMove(...) { ... }
+
+
+// ---- Worker bridge ----
+self.onmessage = (e) => {
+  const { id, gs } = e.data;
+  const next = pickAiMove(gs);
+  self.postMessage({ id, next });
+};
 
 self.onmessage = (e: MessageEvent) => {
   const { id, gs } = e.data as { id: number; gs: GameState };
