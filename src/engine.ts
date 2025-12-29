@@ -1027,9 +1027,10 @@ const op = countMovesFast(gs, forC === "white" ? "black" : "white");
   return score + (my - op) * 0.5;
 }
 
-function pickAiMove(gs: GameState) {
+export function pickAiMove(gs: GameState): GameState {
   const { ai } = gs;
   const c = ai.cpuPlays;
+
   const moves = generateMoves(gs, c);
   if (!moves.length) return gs;
 
@@ -1045,36 +1046,45 @@ function pickAiMove(gs: GameState) {
       if (s > b) {
         b = s;
         bn = m.next;
-      }
+   const depth = ai.level === "Master" ? 2 : 1;
+
+  let best = -Infinity;
+  let bn = moves[0].next;
+
+  for (const mv of moves) {
+    const sc = minimax(mv.next, depth, -Infinity, Infinity, false, c);
+    if (sc > best) {
+      best = sc;
+      bn = mv.next;
     }
+  }
     return bn;
   }
 
-  function minimax(
-    st: GameState,
-    d: number,
-    a: number,
-    b: number,
-    max: boolean,
-    maxC: Color
-  ): number {
-    if (!d || st.winner) return evaluate(st, maxC);
+function minimax(
+  st: GameState,
+  d: number,
+  a: number,
+  b: number,
+  max: boolean,
+  maxC: Color
+): number {
+  if (!d || st.winner) return evaluate(st, maxC);
 
-    const side: Color = max ? maxC : maxC === "white" ? "black" : "white";
-    const list = generateMoves(st, side);
+  const side: Color = max ? maxC : maxC === "white" ? "black" : "white";
+  const list = generateMoves(st, side);
 
-    if (!list.length) return evaluate(st, maxC);
+  if (!list.length) return evaluate(st, maxC);
 
-    if (max) {
-      let v = -Infinity;
-      for (const mv of list) {
-        v = Math.max(v, minimax(mv.next, d - 1, a, b, false, maxC));
-        a = Math.max(a, v);
-        if (b <= a) break;
-      }
-      return v;
+  if (max) {
+    let v = -Infinity;
+    for (const mv of list) {
+      v = Math.max(v, minimax(mv.next, d - 1, a, b, false, maxC));
+      a = Math.max(a, v);
+      if (b <= a) break;
     }
-
+    return v;
+  } else {
     let v = Infinity;
     for (const mv of list) {
       v = Math.min(v, minimax(mv.next, d - 1, a, b, true, maxC));
@@ -1083,20 +1093,6 @@ function pickAiMove(gs: GameState) {
     }
     return v;
   }
-
-  let best = -Infinity;
-  let bn = moves[0].next;
-  for (const mv of moves) {
-const depth =
-  ai.level === "Master" ? 2 :
-  1; // Hard = 1
-
-const sc = minimax(mv.next, depth, -Infinity, Infinity, false, c);    if (sc > best) {
-      best = sc;
-      bn = mv.next;
-    }
-  }
-  return bn;
 }
 
 function runSelfTests() {
