@@ -1,6 +1,6 @@
 /// <reference lib="webworker".. />
 
-import { pickAiMove, type GameState } from "./engine.ts";
+import { pickAiMove, type GameState } from "./engine";
 
 self.onmessage = (e: MessageEvent) => {
   const { id, gs } = e.data as { id: number; gs: GameState };
