@@ -1,4 +1,4 @@
-/// <reference lib="webworker" />
+/// <reference lib="webworker".. />
 
 import { pickAiMove, type GameState } from "./engine";
 
