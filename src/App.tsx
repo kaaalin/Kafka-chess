@@ -584,7 +584,7 @@ function enforceReturnOrQuietus(gs: GameState): GameState {
       // Send it to Quietus
       next.quietus[occ.color][occ.type]++;
 
-      // Optional debug / user message
+      // Optional debug / .. user message
       const side = occ.color === "white" ? "White" : "Black";
       lostPieceDescription = `${side} ${GLYPH[occ.type]} failed to return and went to Quietus.`;
 
