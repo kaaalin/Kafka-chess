@@ -1246,18 +1246,24 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
         : undefined
     }
   >
-    <text
-      x="50"
-      y="78"
-      textAnchor="middle"
-      fontSize="84"
-      fill="none"
-      stroke="#2563eb"
-      strokeWidth="3"
-      fontFamily="'Noto Chess','DejaVu Sans',serif"
-    >
-      {pieceGlyph(type)}
-    </text>
+  <text
+  x="50"
+  y="78"
+  textAnchor="middle"
+  fontSize="84"
+  fill="none"
+  stroke="#7DB1BF"
+  strokeWidth="3"
+  paintOrder="stroke"
+  style={{
+    // dark outline behind the blue stroke = readable on wood
+    filter: "drop-shadow(0 0 1px rgba(0,0,0,0.95)) drop-shadow(0 0 4px rgba(0,0,0,0.55))",
+  }}
+  fontFamily="'Noto Chess','DejaVu Sans',serif"
+>
+  {pieceGlyph(type)}
+</text>
+
   </svg>
 );
 
