@@ -1257,7 +1257,7 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   paintOrder="stroke"
   style={{
     // dark outline behind the blue stroke = readable on wood
-    filter: "drop-shadow(0 0 0.2px rgba(0,0,0,0.95)) drop-shadow(0 0 0.2px rgba(0,0,0,0.55))",
+    filter: "drop-shadow(0 0 0.1px rgba(0,0,0,0.55)) drop-shadow(0 0 0.1px rgba(0,0,0,0.55))",
   }}
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
