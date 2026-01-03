@@ -1254,7 +1254,7 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   fontSize="84"
   fill="none"
   stroke="rgba(0,0,0,95)"   // light overlay
-  strokeWidth="4"
+  strokeWidth="3.5"
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
   {pieceGlyph(type)}
