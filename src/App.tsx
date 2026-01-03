@@ -44,6 +44,9 @@ const INITIAL_COUNTS: Record<PieceType, number> = {
 const emptyStock = () => ({ ...INITIAL_COUNTS });
 const zeroStock = () => ({ K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 });
 
+// Board background image (put the PNG in /public and keep this path)
+const BOARD_BG = "/wood-board-greyer1.png";
+
 const woodColor = (f: number, r: number) => ((f + r) % 2 ? "#8C6B3E" : "#E6CBA8");
 
 const shade = (hex: string, d: number) => {
@@ -1814,7 +1817,12 @@ useEffect(() => {
         <div className="flex justify-center mt-0">
           <div
             className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full"
-            style={{ border: "4px solid #3b2f2f" }}
+            style={{
+              backgroundImage: `url(${BOARD_BG})`,
+              backgroundSize: "100% 100%",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+            }}
           >
             {rankOrder.map((r) =>
               fileOrder.map((f) => {
@@ -1836,7 +1844,7 @@ const hidesBlue =
                     className={`relative aspect-square ${
                       isSel ? "outline outline-4 outline-emerald-400/80" : ""
                     }`}
-                 style={{ background: woodSquareBg(f, r) }}
+                 style={{ background: "transparent" }}
                   >
                     {isFrom && (
                       <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
@@ -2257,7 +2265,12 @@ return (
       {/* Center: board */}
       <div
         className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl"
-        style={{ border: "4px solid #3b2f2f" }}
+        style={{
+          backgroundImage: `url(${BOARD_BG})`,
+          backgroundSize: "100% 100%",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+        }}
       >
         {rankOrder.map((r) =>
           fileOrder.map((f) => {
@@ -2277,7 +2290,7 @@ return (
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e, sq)}
                 className={`relative w-20 h-20 ${isSel ? "outline outline-4 outline-emerald-400/80" : ""}`}
-               style={{ background: woodSquareBg(f, r) }}
+               style={{ background: "transparent" }}
               >
                 {isFrom && (
                   <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
