@@ -1250,7 +1250,7 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   >
  <defs>
   <filter id="softStroke">
-    <feGaussianBlur stdDeviation="0.6" />
+    <feGaussianBlur stdDeviation="0.8" />
   </filter>
 </defs>   
  {/* BACK OVERLAY (contrast layer) */}
@@ -1261,7 +1261,7 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   fontSize="84"
   fill="none"
   stroke="rgba(0,0,0,0.6)"
-  strokeWidth="6"
+  strokeWidth="4"
   filter="url(#softStroke)"
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
