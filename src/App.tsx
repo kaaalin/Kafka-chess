@@ -1246,7 +1246,22 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
         : undefined
     }
   >
-  <text
+ {/* BACK OVERLAY (contrast layer) */}
+<text
+  x="50"
+  y="78"
+  textAnchor="middle"
+  fontSize="84"
+  fill="none"
+  stroke="rgba(245,245,245,0.85)"   // light overlay
+  strokeWidth="6"
+  fontFamily="'Noto Chess','DejaVu Sans',serif"
+>
+  {pieceGlyph(type)}
+</text>
+
+{/* FRONT BLUE SYMBOL */}
+<text
   x="50"
   y="78"
   textAnchor="middle"
@@ -1254,15 +1269,11 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   fill="none"
   stroke="#7DB1BF"
   strokeWidth="3"
-  paintOrder="stroke"
-  style={{
-    // dark outline behind the blue stroke = readable on wood
-    filter: "drop-shadow(0 0 0.1px rgba(0,0,0,0.55)) drop-shadow(0 0 0.1px rgba(0,0,0,0.55))",
-  }}
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
   {pieceGlyph(type)}
 </text>
+
 
   </svg>
 );
