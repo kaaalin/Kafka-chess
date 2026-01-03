@@ -1237,6 +1237,11 @@ function StockView({
 }
 
 const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
+ <defs>
+  <filter id="softStroke">
+    <feGaussianBlur stdDeviation="0.6" />
+  </filter>
+</defs>
   <svg
     className="absolute inset-0 w-full h-full pointer-events-none"
     viewBox="0 0 100 100"
@@ -1246,6 +1251,7 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
         : undefined
     }
   >
+    
  {/* BACK OVERLAY (contrast layer) */}
 <text
   x="50"
@@ -1253,8 +1259,9 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   textAnchor="middle"
   fontSize="84"
   fill="none"
-  stroke="rgba(0,0,0,95)"   // light overlay
-  strokeWidth="3.5"
+  stroke="rgba(0,0,0,0.6)"
+  strokeWidth="6"
+  filter="url(#softStroke)"
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
   {pieceGlyph(type)}
