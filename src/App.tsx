@@ -1260,8 +1260,8 @@ const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
   textAnchor="middle"
   fontSize="84"
   fill="none"
-  stroke="rgba(0,0,0,0.6)"
-  strokeWidth="3.2"
+  stroke="rgba(0,0,0,0.5)"
+  strokeWidth="3.1"
   filter="url(#softStroke)"
   fontFamily="'Noto Chess','DejaVu Sans',serif"
 >
