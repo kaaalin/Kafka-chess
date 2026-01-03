@@ -1237,12 +1237,13 @@ function StockView({
 }
 
 const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
- <defs>
+
+  <svg
+     <defs>
   <filter id="softStroke">
     <feGaussianBlur stdDeviation="0.6" />
   </filter>
 </defs>
-  <svg
     className="absolute inset-0 w-full h-full pointer-events-none"
     viewBox="0 0 100 100"
     style={
