@@ -1,2567 +1,1390 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-type FileLetter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h";
-type RankNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type Color = "white" | "black";
 type PieceType = "K" | "Q" | "R" | "B" | "N" | "P";
-type SquareId = `${FileLetter}${RankNum}`;
+type Difficulty = "Easy" | "Medium" | "Hard" | "Master";
+type Mode = "human" | "cpu";
+type Square = `${"a" | "b" | "c" | "d" | "e" | "f" | "g" | "h"}${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}`;
 
-const FILES: FileLetter[] = ["a", "b", "c", "d", "e", "f", "g", "h"];
-const RANKS: RankNum[] = [1, 2, 3, 4, 5, 6, 7, 8];
-
-const GLYPH: Record<PieceType, string> = {
-  K: "\u265A\uFE0E", // ♚︎
-  Q: "\u265B\uFE0E", // ♛︎
-  R: "\u265C\uFE0E", // ♜︎
-  B: "\u265D\uFE0E", // ♝︎
-  N: "\u265E\uFE0E", // ♞︎
-  P: "\u265F\uFE0E", // ♟︎
+type Piece = {
+  id: string;
+  type: PieceType;
+  color: Color;
+  moved: boolean;
+  promotedFromPawn?: boolean;
 };
 
-const pieceGlyph = (t: PieceType) => GLYPH[t];
-
-const idFrom = (f: number, r: number): SquareId => `${FILES[f]}${r}` as SquareId;
-const inBounds = (f: number, r: number) => f >= 0 && f < 8 && r >= 1 && r <= 8;
-
-function deepClone<T>(x: T): T {
-  // Fast in modern Chrome/Firefox/Safari; fallback for older.
-  // @ts-ignore
-  return typeof structuredClone === "function"
-    // @ts-ignore
-    ? structuredClone(x)
-    : JSON.parse(JSON.stringify(x));
-}
-
-const INITIAL_COUNTS: Record<PieceType, number> = {
-  K: 1,
-  Q: 1,
-  R: 2,
-  B: 2,
-  N: 2,
-  P: 8,
+type SecretInfo = {
+  pieceId: string;
+  revealed: boolean;
+  initialSquare: Square;
 };
 
-const emptyStock = () => ({ ...INITIAL_COUNTS });
-const zeroStock = () => ({ K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 });
-
-// Board background image (put the PNG in /public and keep this path)
-const BOARD_BG = "/wood-board-greyer1.png";
-
-const woodColor = (f: number, r: number) => ((f + r) % 2 ? "#8C6B3E" : "#E6CBA8");
-
-const shade = (hex: string, d: number) => {
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) & 255;
-  let g = (n >> 8) & 255;
-  let b = n & 255;
-  const s = (x: number) => Math.max(0, Math.min(255, x + Math.round((255 * d) / 100)));
-  r = s(r);
-  g = s(g);
-  b = s(b);
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+type Move = {
+  from: Square;
+  to?: Square;
+  kind: "move" | "selfCapture" | "reveal";
+  promotion?: Exclude<PieceType, "K" | "P">;
 };
 
-const woodSquareBg = (f: number, r: number) => {
-  const base = woodColor(f, r);
-  return `linear-gradient(135deg, ${shade(base, 8)} 0%, ${base} 55%, ${shade(base, -6)} 100%)`;
+type PendingPromotion = {
+  square: Square;
+  color: Color;
+  moveBase: Move;
 };
 
-// Encode a position for repetition tracking: board layout + side to move + king presence flags
-function encodePosition(gs: GameState) {
-  const cells = gs.board
-    .map((sq) => {
-      const o = sq.occupant;
-      if (!o) return ".";
-      if (o.kind === "metamorph") return o.color === "white" ? "M" : "m";
-      const t = o.type;
-      return o.color === "white" ? t : t.toLowerCase();
-    })
-    .join("");
-
-  const turnChar = gs.turn === "white" ? "w" : "b";
-
-  const wk = gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "piece" && o.type === "K" && o.color === "white";
-  });
-
-  const bk = gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "piece" && o.type === "K" && o.color === "black";
-  });
-
-  const kw = wk ? "1" : "0";
-  const kb = bk ? "1" : "0";
-
-  return `${turnChar}${kw}${kb}|${cells}`;
-}
-
-type Occupant =
-  | { kind: "metamorph"; color: Color }
-  | {
-      kind: "piece";
-      color: Color;
-      type: PieceType;
-      bornAtTurn: number;
-      mustReturn?: boolean;
-      returnByTurn?: number;
-     coversBlueSymbol?: boolean;
-    }
-  | null;
-
-interface Square {
-  id: SquareId;
-  file: number;
-  rank: number;
-  blueSymbol?: PieceType;
-  occupant: Occupant;
-}
-
-interface ChrysalisStock {
-  K: number;
-  Q: number;
-  R: number;
-  B: number;
-  N: number;
-  P: number;
-}
-
-interface GameState {
-  board: Square[];
+type State = {
+  board: Record<Square, Piece | null>;
   turn: Color;
-  moveNumber: number;
-  stock: { white: ChrysalisStock; black: ChrysalisStock };
-  quietus: { white: ChrysalisStock; black: ChrysalisStock };
-  kingOnBoard: { white: boolean; black: boolean };
-  kingProtectedUntil: { white: number | null; black: number | null };
-  selected: SquareId | null;
-  promotion: { square: SquareId; color: Color } | null;
-  message: string | null;
+  selected: Square | null;
+  flipped: boolean;
+  quietus: { white: Piece[]; black: Piece[] };
+  mode: Mode;
+  cpuColor: Color;
+  difficulty: Difficulty;
+  status: string;
   winner: Color | null;
-  winReason: string | null;
-  ai: { mode: "human" | "cpu"; cpuPlays: Color; level: "Easy" | "Medium" | "Hard" | "Master" };
-  lastMove: { from: SquareId; to: SquareId; by: Color } | null;
-  repetition: Record<string, number>;
+  result: string | null;
+  showRules: boolean;
+  secrets: { white: SecretInfo; black: SecretInfo };
+  peek: "none" | Color;
+  pendingPromotion: PendingPromotion | null;
+  enPassantTarget: Square | null;
+  lastMove: { from?: Square; to?: Square; kind: Move["kind"] } | null;
+};
+
+const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+const RANKS_ASC = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+const RANKS_DESC = [8, 7, 6, 5, 4, 3, 2, 1] as const;
+const PROMOTION_TYPES: Exclude<PieceType, "K" | "P">[] = ["Q", "R", "B", "N"];
+
+const GLYPHS: Record<Color, Record<PieceType, string>> = {
+  white: { K: "♚", Q: "♛", R: "♜", B: "♝", N: "♞", P: "♟" },
+  black: { K: "♚", Q: "♛", R: "♜", B: "♝", N: "♞", P: "♟" },
+};
+
+const WOOD_LIGHT = "#dcc4a1";
+const PANEL = "#f4f1ec";
+const PANEL_2 = "#e8e4de";
+const ACCENT = "#b07a52";
+const PAGE_BG = "#f6f1ea";
+const TEXT = "#3a332c";
+const BORDER = "#d8cfc2";
+
+const other = (c: Color): Color => (c === "white" ? "black" : "white");
+const keyOf = (f: number, r: number) => `${FILES[f]}${r}` as Square;
+const coords = (sq: Square) => ({
+  f: FILES.indexOf(sq[0] as (typeof FILES)[number]),
+  r: Number(sq[1]),
+});
+const inBounds = (f: number, r: number) => f >= 0 && f < 8 && r >= 1 && r <= 8;
+const originalColorFromPieceId = (pieceId: string): Color => (pieceId.startsWith("w-") ? "white" : "black");
+
+function cloneBoard(board: Record<Square, Piece | null>) {
+  const out = {} as Record<Square, Piece | null>;
+  for (const file of FILES) {
+    for (const rank of RANKS_ASC) {
+      const sq = `${file}${rank}` as Square;
+      out[sq] = board[sq] ? { ...board[sq]! } : null;
+    }
+  }
+  return out;
 }
 
-function createInitialBoard(): Square[] {
-  const board: Square[] = [];
-  for (const r of RANKS) {
-    for (let f = 0; f < 8; f++) {
-      board.push({ id: idFrom(f, r), file: f, rank: r, occupant: null });
+function cloneState(state: State): State {
+  return {
+    ...state,
+    board: cloneBoard(state.board),
+    quietus: {
+      white: state.quietus.white.map((p) => ({ ...p })),
+      black: state.quietus.black.map((p) => ({ ...p })),
+    },
+    secrets: {
+      white: { ...state.secrets.white },
+      black: { ...state.secrets.black },
+    },
+    pendingPromotion: state.pendingPromotion ? { ...state.pendingPromotion } : null,
+    enPassantTarget: state.enPassantTarget,
+    lastMove: state.lastMove ? { ...state.lastMove } : null,
+  };
+}
+
+function createInitialBoard() {
+  const board = {} as Record<Square, Piece | null>;
+  for (const file of FILES) {
+    for (const rank of RANKS_ASC) {
+      board[`${file}${rank}` as Square] = null;
     }
   }
 
-  // build bag of piece types for blue symbols (Metamorphia)
-  const bag: PieceType[] = [];
-  const pack = emptyStock();
-  (Object.entries(pack) as [PieceType, number][]).forEach(([t, n]) => {
-    for (let i = 0; i < n * 2; i++) bag.push(t);
-  });
-
-  // shuffle
-  for (let i = bag.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [bag[i], bag[j]] = [bag[j], bag[i]];
-  }
-
-  // deal blue symbols in Metamorphia (ranks 3–6)
-  let k = 0;
-  for (let r = 3; r <= 6; r++) {
-    for (let f = 0; f < 8; f++) {
-      const s = board.find((sq) => sq.rank === r && sq.file === f)!;
-      s.blueSymbol = bag[k++];
-    }
-  }
-
-  // place metamorphs on ranks 1–2 (black) and 7–8 (white)
-  for (const r of [1, 2] as RankNum[]) {
-    for (let f = 0; f < 8; f++) {
-      board.find((sq) => sq.rank === r && sq.file === f)!.occupant = {
-        kind: "metamorph",
-        color: "black",
-      };
-    }
-  }
-  for (const r of [7, 8] as RankNum[]) {
-    for (let f = 0; f < 8; f++) {
-      board.find((sq) => sq.rank === r && sq.file === f)!.occupant = {
-        kind: "metamorph",
-        color: "white",
-      };
-    }
+  const back: PieceType[] = ["R", "N", "B", "Q", "K", "B", "N", "R"];
+  for (let i = 0; i < 8; i++) {
+    board[`${FILES[i]}1` as Square] = { id: `w-${back[i]}-${i}`, type: back[i], color: "white", moved: false };
+    board[`${FILES[i]}2` as Square] = { id: `w-P-${i}`, type: "P", color: "white", moved: false };
+    board[`${FILES[i]}8` as Square] = { id: `b-${back[i]}-${i}`, type: back[i], color: "black", moved: false };
+    board[`${FILES[i]}7` as Square] = { id: `b-P-${i}`, type: "P", color: "black", moved: false };
   }
 
   return board;
 }
 
-function initialGame(): GameState {
-  const base: GameState = {
-    board: createInitialBoard(),
-    turn: "white",
-    moveNumber: 1,
-    stock: { white: emptyStock(), black: emptyStock() },
-    quietus: { white: zeroStock(), black: zeroStock() },
-    kingOnBoard: { white: false, black: false },
-    kingProtectedUntil: { white: null, black: null },
-    selected: null,
-    promotion: null,
-    message: null,
-    winner: null,
-    winReason: null,
-    ai: { mode: "cpu", cpuPlays: "black", level: "Hard" },
-    lastMove: null,
-    repetition: {},
-  };
-
-  const key = encodePosition(base);
-  base.repetition = { [key]: 1 };
-
-  return base;
+function randomFrom<T>(arr: T[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function legalMovesForPiece(gs: GameState, from: Square): { f: number; r: number }[] {
-  const occ = from.occupant as Extract<Occupant, { kind: "piece" }>;
-  const color = occ.color;
-  const board = gs.board;
-  const moves: { f: number; r: number }[] = [];
-  const f0 = from.file;
-  const r0 = from.rank;
-  const limit316 = !occ.mustReturn;
+function createSecrets(board: Record<Square, Piece | null>): State["secrets"] {
+  const whitePool: Array<{ piece: Piece; square: Square }> = [];
+  const blackPool: Array<{ piece: Piece; square: Square }> = [];
 
-  const canLand = (nf: number, nr: number) => {
-    if (!inBounds(nf, nr)) return false;
-    if (limit316 && !(nr >= 3 && nr <= 6)) return false;
-    const dest = board.find((s) => s.file === nf && s.rank === nr)!;
-    if (!dest.occupant) return true;
-    return dest.occupant.kind === "piece" && dest.occupant.color !== color;
+  for (const sq of Object.keys(board) as Square[]) {
+    const p = board[sq];
+    if (!p) continue;
+    if (p.type === "P" || p.type === "B" || p.type === "N") {
+      if (p.color === "white") whitePool.push({ piece: { ...p }, square: sq });
+      else blackPool.push({ piece: { ...p }, square: sq });
+    }
+  }
+
+  const whiteSecret = randomFrom(blackPool);
+  const blackSecret = randomFrom(whitePool);
+
+  return {
+    white: { pieceId: whiteSecret.piece.id, revealed: false, initialSquare: whiteSecret.square },
+    black: { pieceId: blackSecret.piece.id, revealed: false, initialSquare: blackSecret.square },
   };
+}
 
-  const rays = (dirs: [number, number][]) => {
-    for (const [df, dr] of dirs) {
-      let nf = f0 + df;
-      let nr = r0 + dr;
-      while (inBounds(nf, nr)) {
-        if (limit316 && !(nr >= 3 && nr <= 6)) break;
-        const dest = board.find((s) => s.file === nf && s.rank === nr)!;
-        const o = dest.occupant;
-        if (!o) {
-          moves.push({ f: nf, r: nr });
-        } else {
-          if (o.kind === "piece" && o.color !== color) moves.push({ f: nf, r: nr });
-          break;
+function initialState(): State {
+  const board = createInitialBoard();
+  return {
+    board,
+    turn: "white",
+    selected: null,
+    flipped: false,
+    quietus: { white: [], black: [] },
+    mode: "cpu",
+    cpuColor: "black",
+    difficulty: "Hard",
+    status: "White to move.",
+    winner: null,
+    result: null,
+    showRules: false,
+    secrets: createSecrets(board),
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    lastMove: null,
+  };
+}
+
+function findKing(board: Record<Square, Piece | null>, color: Color) {
+  return (Object.keys(board) as Square[]).find((sq) => board[sq]?.type === "K" && board[sq]?.color === color) || null;
+}
+
+function getCastlingRookSquares(color: Color, side: "king" | "queen") {
+  if (color === "white") {
+    return side === "king"
+      ? { rookFrom: "h1" as Square, rookTo: "f1" as Square }
+      : { rookFrom: "a1" as Square, rookTo: "d1" as Square };
+  }
+  return side === "king"
+    ? { rookFrom: "h8" as Square, rookTo: "f8" as Square }
+    : { rookFrom: "a8" as Square, rookTo: "d8" as Square };
+}
+
+function maybePromotion(piece: Piece, to: Square) {
+  const rank = Number(to[1]);
+  return piece.type === "P" && ((piece.color === "white" && rank === 8) || (piece.color === "black" && rank === 1));
+}
+
+function rayMoves(board: Record<Square, Piece | null>, from: Square, color: Color, dirs: number[][], allowSelf: boolean) {
+  const { f, r } = coords(from);
+  const out: Move[] = [];
+
+  for (const [df, dr] of dirs) {
+    let nf = f + df;
+    let nr = r + dr;
+
+    while (inBounds(nf, nr)) {
+      const to = keyOf(nf, nr);
+      const hit = board[to];
+      if (!hit) {
+        out.push({ from, to, kind: "move" });
+      } else {
+        if (hit.color !== color) out.push({ from, to, kind: "move" });
+        else if (allowSelf && hit.type !== "Q" && hit.type !== "K") out.push({ from, to, kind: "selfCapture" });
+        break;
+      }
+      nf += df;
+      nr += dr;
+    }
+  }
+
+  return out;
+}
+
+function pseudoMoves(state: State, color: Color, allowSelf = false, forAttackOnly = false) {
+  const board = state.board;
+  const out: Move[] = [];
+
+  for (const sq of Object.keys(board) as Square[]) {
+    const p = board[sq];
+    if (!p || p.color !== color) continue;
+    const { f, r } = coords(sq);
+
+    if (p.type === "P") {
+      const dir = color === "white" ? 1 : -1;
+      const one = r + dir;
+
+      if (!forAttackOnly && inBounds(f, one) && !board[keyOf(f, one)]) {
+        out.push({ from: sq, to: keyOf(f, one), kind: "move" });
+        const two = r + dir * 2;
+        const startRank = color === "white" ? 2 : 7;
+        if (r === startRank && inBounds(f, two) && !board[keyOf(f, two)] && !board[keyOf(f, one)]) {
+          out.push({ from: sq, to: keyOf(f, two), kind: "move" });
         }
-        nf += df;
-        nr += dr;
       }
-    }
-  };
 
-  switch (occ.type) {
-    case "N": {
-      const deltas: [number, number][] = [
-        [1, 2],
-        [2, 1],
-        [-1, 2],
-        [-2, 1],
-        [1, -2],
-        [2, -1],
-        [-1, -2],
-        [-2, -1],
-      ];
-      for (const [df, dr] of deltas) {
-        const nf = f0 + df;
-        const nr = r0 + dr;
-        if (canLand(nf, nr)) moves.push({ f: nf, r: nr });
+      for (const df of [-1, 1]) {
+        const nf = f + df;
+        const nr = r + dir;
+        if (!inBounds(nf, nr)) continue;
+        const to = keyOf(nf, nr);
+        const hit = board[to];
+
+        if (forAttackOnly) {
+          out.push({ from: sq, to, kind: "move" });
+          continue;
+        }
+        if (hit && hit.color !== color) {
+          out.push({ from: sq, to, kind: "move" });
+          continue;
+        }
+        if (allowSelf && hit && hit.color === color && hit.type !== "Q" && hit.type !== "K") {
+          out.push({ from: sq, to, kind: "selfCapture" });
+          continue;
+        }
+        if (!hit && state.enPassantTarget === to) {
+          const capturedSq = keyOf(nf, r);
+          const captured = board[capturedSq];
+          if (captured && captured.type === "P" && captured.color === other(color)) {
+            out.push({ from: sq, to, kind: "move" });
+          }
+        }
       }
-      break;
+      continue;
     }
-    case "B":
-      rays([
-        [1, 1],
-        [1, -1],
-        [-1, 1],
-        [-1, -1],
-      ]);
-      break;
-    case "R":
-      rays([
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-      ]);
-      break;
-    case "Q":
-      rays([
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-        [1, 1],
-        [1, -1],
-        [-1, 1],
-        [-1, -1],
-      ]);
-      break;
-    case "K": {
+
+    if (p.type === "N") {
+      const jumps = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
+      for (const [df, dr] of jumps) {
+        const nf = f + df;
+        const nr = r + dr;
+        if (!inBounds(nf, nr)) continue;
+        const to = keyOf(nf, nr);
+        const hit = board[to];
+        if (!hit || hit.color !== color) out.push({ from: sq, to, kind: "move" });
+        else if (allowSelf && hit.type !== "Q" && hit.type !== "K") out.push({ from: sq, to, kind: "selfCapture" });
+      }
+      continue;
+    }
+
+    if (p.type === "B") {
+      out.push(...rayMoves(board, sq, color, [[1, 1], [-1, 1], [1, -1], [-1, -1]], allowSelf));
+      continue;
+    }
+    if (p.type === "R") {
+      out.push(...rayMoves(board, sq, color, [[1, 0], [-1, 0], [0, 1], [0, -1]], allowSelf));
+      continue;
+    }
+    if (p.type === "Q") {
+      out.push(...rayMoves(board, sq, color, [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]], allowSelf));
+      continue;
+    }
+
+    if (p.type === "K") {
       for (let df = -1; df <= 1; df++) {
         for (let dr = -1; dr <= 1; dr++) {
           if (!df && !dr) continue;
-          const nf = f0 + df;
-          const nr = r0 + dr;
-          if (canLand(nf, nr)) moves.push({ f: nf, r: nr });
+          const nf = f + df;
+          const nr = r + dr;
+          if (!inBounds(nf, nr)) continue;
+          const to = keyOf(nf, nr);
+          const hit = board[to];
+          if (!hit || hit.color !== color) out.push({ from: sq, to, kind: "move" });
         }
       }
-      break;
-    }
-    case "P": {
-      const dir = color === "white" ? -1 : 1;
-      const one = r0 + dir;
-      if (inBounds(f0, one) && !gs.board.find((s) => s.file === f0 && s.rank === one)!.occupant) {
-        moves.push({ f: f0, r: one });
-      }
-      for (const df of [-1, 1]) {
-        const nf = f0 + df;
-        const nr = r0 + dir;
-        if (!inBounds(nf, nr)) continue;
-        const o = gs.board.find((s) => s.file === nf && s.rank === nr)!.occupant;
-        if (o && o.kind === "piece" && o.color !== color) {
-          moves.push({ f: nf, r: nr });
+
+      if (!forAttackOnly && !p.moved) {
+        const enemy = other(color);
+        const homeRank = color === "white" ? 1 : 8;
+        if (r === homeRank && !squareAttacked(state, sq, enemy)) {
+          const kingSide = [keyOf(f + 1, r), keyOf(f + 2, r)] as Square[];
+          const kingRook = board[getCastlingRookSquares(color, "king").rookFrom];
+          if (
+            kingRook && kingRook.type === "R" && kingRook.color === color && !kingRook.moved &&
+            kingSide.every((s) => !board[s]) &&
+            !squareAttacked(state, kingSide[0], enemy) && !squareAttacked(state, kingSide[1], enemy)
+          ) {
+            out.push({ from: sq, to: kingSide[1], kind: "move" });
+          }
+
+          const queenBetween = [keyOf(f - 1, r), keyOf(f - 2, r), keyOf(f - 3, r)] as Square[];
+          const queenTraverse = [keyOf(f - 1, r), keyOf(f - 2, r)] as Square[];
+          const queenRook = board[getCastlingRookSquares(color, "queen").rookFrom];
+          if (
+            queenRook && queenRook.type === "R" && queenRook.color === color && !queenRook.moved &&
+            queenBetween.every((s) => !board[s]) &&
+            !squareAttacked(state, queenTraverse[0], enemy) && !squareAttacked(state, queenTraverse[1], enemy)
+          ) {
+            out.push({ from: sq, to: queenTraverse[1], kind: "move" });
+          }
         }
       }
-      break;
     }
   }
 
-  return moves;
+  return out;
 }
 
-function legalMovesForMetamorph(gs: GameState, from: Square): { f: number; r: number }[] {
-  const m = from.occupant as Extract<Occupant, { kind: "metamorph" }>;
-  const dir = m.color === "white" ? -1 : 1;
-  const nr = from.rank + dir;
-  if (!inBounds(from.file, nr)) return [];
-  const dest = gs.board.find((s) => s.file === from.file && s.rank === nr)!;
-  if (dest.occupant) return [];
-  return [{ f: from.file, r: nr }];
+function squareAttacked(state: State, target: Square, by: Color) {
+  return pseudoMoves(state, by, false, true).some((m) => m.to === target);
 }
 
-function applyAutoTransforms(gs: GameState): { newGs: GameState; changed: boolean } {
-  const next = deepClone(gs);
-  let changed = false;
+function simulateMoveNoFinalize(state: State, move: Move): State {
+  const next = cloneState(state);
+  next.selected = null;
+  next.pendingPromotion = null;
+  next.lastMove = { kind: move.kind, from: move.from, to: move.to };
+  next.enPassantTarget = null;
+  next.status = "";
 
-  for (const sq of next.board) {
-    if (!(sq.rank >= 3 && sq.rank <= 6) || !sq.blueSymbol || !sq.occupant) continue;
+  if (move.kind === "reveal") {
+    const secret = next.secrets[state.turn];
+    if (secret.revealed) return next;
+    const sq = (Object.keys(next.board) as Square[]).find((k) => next.board[k]?.id === secret.pieceId) || null;
 
-    if (sq.occupant.kind === "metamorph") {
-  const c = sq.occupant.color;
-  const t = sq.blueSymbol;
-  if (next.stock[c][t] > 0) {
-    next.stock[c][t]--;
-    sq.occupant = {
-      kind: "piece",
-      color: c,
-      type: t,
-      bornAtTurn: next.moveNumber,
-      coversBlueSymbol: true, // NEW
-    };
-    if (t === "K") next.kingOnBoard[c] = true;
-    changed = true;
-  }
-} else {
-  const c = sq.occupant.color;
-  const cur = sq.occupant.type;
-  const t = sq.blueSymbol;
-  if (cur !== t && next.stock[c][t] > 0) {
-    next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
-    next.stock[c][t]--;
-    sq.occupant = {
-      kind: "piece",
-      color: c,
-      type: t,
-      bornAtTurn: next.moveNumber,
-      coversBlueSymbol: true, // NEW
-    };
-    if (cur === "K" && t !== "K") next.kingOnBoard[c] = false;
-    if (t === "K") next.kingOnBoard[c] = true;
-    changed = true;
-  }
-}
-  }
+    if (!sq) {
+      next.status = `${state.turn} tried to reveal the fifth column, but it had already been removed.`;
+      next.turn = other(state.turn);
+      return next;
+    }
 
-  return { newGs: next, changed };
-}
-
-function isSquareAttacked(gs: GameState, f: number, r: number, by: Color) {
-  return gs.board.some((sq) => {
-    const o = sq.occupant;
-    return (
-      o &&
-      o.kind === "piece" &&
-      o.color === by &&
-      legalMovesForPiece(gs, sq).some((m) => m.f === f && m.r === r)
-    );
-  });
-}
-
-function findKingSquare(gs: GameState, c: Color) {
-  return (
-    gs.board.find((sq) => {
-      const o = sq.occupant;
-      return o && o.kind === "piece" && o.color === c && o.type === "K";
-    }) || null
-  );
-}
-
-const anyPawnCanMove = (gs: GameState, c: Color) =>
-  gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "piece" && o.color === c && o.type === "P" && legalMovesForPiece(gs, sq).length > 0;
-  });
-
-const anyMetamorphCanMove = (gs: GameState, c: Color) =>
-  gs.board.some((sq) => {
-    const o = sq.occupant;
-    return o && o.kind === "metamorph" && o.color === c && legalMovesForMetamorph(gs, sq).length > 0;
-  });
-
-const hasAnyMetamorph = (gs: GameState, c: Color) =>
-  gs.board.some((s) => s.occupant && s.occupant.kind === "metamorph" && s.occupant.color === c);
-
-const hasAnyPawn = (gs: GameState, c: Color) =>
-  gs.board.some((s) => s.occupant && s.occupant.kind === "piece" && s.occupant.color === c && s.occupant.type === "P");
-
-const anyMoveAvailable = (gs: GameState, c: Color) =>
-  gs.board.some((sq) => {
-    const o = sq.occupant;
-    if (!o || o.color !== c) return false;
-    if (o.kind === "metamorph") return legalMovesForMetamorph(gs, sq).length > 0;
-    if (o.kind === "piece") return legalMovesForPiece(gs, sq).length > 0;
-    return false;
-  });
-
-function kingInCheck(gs: GameState, c: Color) {
-  const ksq = findKingSquare(gs, c);
-  if (!ksq) return false;
-  const att: Color = c === "white" ? "black" : "white";
-  return isSquareAttacked(gs, ksq.file, ksq.rank, att);
-}
-
-function stalemateOutcome(gs: GameState): { winner: Color | null; reason: string } | null {
-  const side: Color = gs.turn;
-  if (kingInCheck(gs, side)) return null;
-  if (anyMoveAvailable(gs, side)) return null;
-
-  const wk = !!findKingSquare(gs, "white");
-  const bk = !!findKingSquare(gs, "black");
-
-  if (wk && bk) {
-    return { winner: null, reason: "stalemate (both players have kings)" };
-  }
-
-  if (!wk && !bk) {
-    return null;
-  }
-
-  const winner: Color = wk ? "white" : "black";
-  return { winner, reason: "stalemate vs kingless opponent" };
-}
-
-const activeCounts = (gs: GameState, c: Color) => {
-  const m: Record<PieceType, number> = { K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 };
-  for (const sq of gs.board) {
-    const o = sq.occupant;
-    if (o && o.kind === "piece" && o.color === c) m[o.type]++;
-  }
-  return m;
-};
-
-const promotionAvailable = (gs: GameState, c: Color, t: PieceType) =>
-  t !== "K" && t !== "P" && activeCounts(gs, c)[t] < INITIAL_COUNTS[t];
-
-function applyPromotionChoice(state: GameState, type: PieceType) {
-  if (!state.promotion) return state;
-  if (type === "K" || type === "P") return state;
-
-  const { square, color } = state.promotion;
-  const next = deepClone(state);
-  const sq = next.board.find((s) => s.id === square)!;
-
-  if (!promotionAvailable(next, color, type)) return state;
-
-  let taken = false;
-  if (next.quietus[color][type] > 0) {
-    next.quietus[color][type]--;
-    taken = true;
-  } else if (next.stock[color][type] > 0) {
-    next.stock[color][type]--;
-    taken = true;
-  }
-
-  if (!taken) {
-    next.message = "No available piece in Quietus or Chrysalis for promotion.";
+    next.board[sq] = { ...next.board[sq]!, color: state.turn, moved: true };
+    secret.revealed = true;
+    next.status = `${state.turn} revealed the fifth column on ${sq}.`;
+    next.turn = other(state.turn);
     return next;
   }
 
-  const deadline = next.moveNumber + 1;
-  sq.occupant = {
-    kind: "piece",
-    color,
-    type,
-    bornAtTurn: next.moveNumber,
-    mustReturn: true,
-    returnByTurn: deadline,
-  };
-  next.promotion = null;
+  const piece = next.board[move.from];
+  if (!piece || piece.color !== state.turn || !move.to) return next;
 
-let promoted = applyAutoTransforms(next).newGs;
+  const fromCoords = coords(move.from);
+  const toCoords = coords(move.to);
+  let target = next.board[move.to];
+  next.board[move.from] = null;
 
-// ✅ STALEMATE CHECK (promotion bypasses performMove's end-of-move checks)
-const stal = stalemateOutcome(promoted);
-if (stal) {
-  promoted.winner = stal.winner; // null = draw
-  promoted.winReason = stal.reason;
-  promoted.message =
-    stal.winner === null
-      ? `Draw: ${stal.reason}`
-      : `Winner: ${stal.winner} (${stal.reason})`;
-  return promoted;
-}
-
-// After promotion, it's already opponent's turn (turn was flipped in performMove),
-// so last mover is the opposite color:
-const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
-
-const opponent: Color = promoted.turn;
-const ksq = findKingSquare(promoted, opponent);
-
-if (ksq) {
-  const attackerHasKing = !!findKingSquare(promoted, lastMoverColor);
-  const prot = promoted.kingProtectedUntil[opponent];
-  const kingProtectedNow = prot !== null && promoted.moveNumber === prot;
-
-  if (attackerHasKing && !kingProtectedNow) {
-    const inCheck = isSquareAttacked(promoted, ksq.file, ksq.rank, lastMoverColor);
-    if (inCheck) promoted.message = `Check on ${opponent}!`;
+  if (piece.type === "P" && !target && state.enPassantTarget === move.to && fromCoords.f !== toCoords.f) {
+    const captureSq = keyOf(toCoords.f, fromCoords.r);
+    target = next.board[captureSq];
+    next.board[captureSq] = null;
   }
-}
 
-return promoted;
-}
+  if (target) {
+    const quietusColor = originalColorFromPieceId(target.id);
+    next.quietus[quietusColor].push({ ...target });
+    const enemyBeneficiary = other(target.color);
+    const wasHiddenEnemyAsset = !next.secrets[enemyBeneficiary].revealed && next.secrets[enemyBeneficiary].pieceId === target.id;
+    next.status = move.kind === "selfCapture"
+      ? wasHiddenEnemyAsset
+        ? `${state.turn} captured their own piece on ${move.to}. It was the opponent's fifth column.`
+        : `${state.turn} captured their own piece on ${move.to}.`
+      : `${state.turn} captured on ${move.to}.`;
+  }
 
+  const movedPiece: Piece = { ...piece, moved: true };
+  next.board[move.to] = movedPiece;
 
-function detectWin(gs: GameState, lastMover: Color, capturedKing: Color | null) {
-  if (capturedKing) return { winner: lastMover, reason: "king captured" };
-
-  for (const c of ["white", "black"] as Color[]) {
-    const hasKing = !!findKingSquare(gs, c);
-    if (!hasKing) {
-      const noP = !hasAnyPawn(gs, c);
-      const pStuck = !noP && !anyPawnCanMove(gs, c);
-      const noM = !hasAnyMetamorph(gs, c);
-      const mStuck = !noM && !anyMetamorphCanMove(gs, c);
-      if ((noP || pStuck) && (noM || mStuck)) {
-        const winner: Color = c === "white" ? "black" : "white";
-        return { winner, reason: "no king + no mobile pawns/metamorphs" };
-      }
+  if (piece.type === "K" && Math.abs(toCoords.f - fromCoords.f) === 2) {
+    const side = toCoords.f > fromCoords.f ? "king" : "queen";
+    const { rookFrom, rookTo } = getCastlingRookSquares(piece.color, side);
+    const rook = next.board[rookFrom];
+    if (rook) {
+      next.board[rookFrom] = null;
+      next.board[rookTo] = { ...rook, moved: true };
+      next.status = `${state.turn} castled ${side}side.`;
     }
   }
 
-  return null;
-}
-function enforceReturnOrQuietus(gs: GameState): GameState {
-  const next = deepClone(gs);
-  let lostPieceDescription: string | null = null;
+  if (piece.type === "P" && Math.abs(toCoords.r - fromCoords.r) === 2) {
+    next.enPassantTarget = keyOf(fromCoords.f, fromCoords.r + (piece.color === "white" ? 1 : -1));
+  }
 
-  for (const sq of next.board) {
-    const occ = sq.occupant;
-    if (
-      occ &&
-      occ.kind === "piece" &&
-      occ.mustReturn &&
-      typeof occ.returnByTurn === "number" &&
-      next.moveNumber > occ.returnByTurn &&           // deadline passed
-      !(sq.rank >= 3 && sq.rank <= 6)                 // still not in Metamorphia
-    ) {
-      // Send it to Quietus
-      next.quietus[occ.color][occ.type]++;
+  if (piece.type === "P" && state.enPassantTarget === move.to && fromCoords.f !== toCoords.f && !state.board[move.to]) {
+    next.status = `${state.turn} captured en passant on ${move.to}.`;
+  }
 
-      // Optional debug / .. user message
-      const side = occ.color === "white" ? "White" : "Black";
-      lostPieceDescription = `${side} ${GLYPH[occ.type]} failed to return and went to Quietus.`;
-
-      sq.occupant = null;
+  if (maybePromotion(movedPiece, move.to)) {
+    if (move.promotion) {
+      next.board[move.to] = { ...movedPiece, type: move.promotion, promotedFromPawn: true };
+      next.status = `${state.turn} promoted on ${move.to}.`;
+      next.turn = other(state.turn);
+      return next;
     }
+
+    next.pendingPromotion = { square: move.to, color: movedPiece.color, moveBase: { ...move } };
+    next.status = `${state.turn} must choose a promotion piece.`;
+    return next;
   }
 
-  if (lostPieceDescription) {
-    next.message = lostPieceDescription;
-  }
-
+  next.turn = other(state.turn);
+  if (!next.status) next.status = `${state.turn} moved ${piece.type.toLowerCase()} from ${move.from} to ${move.to}.`;
   return next;
 }
 
-function performMove(gs: GameState, fromId: SquareId, toId: SquareId): GameState {
-if (gs.winReason) return gs;
+function perspectiveStateForCpu(state: State): State {
+  if (state.mode !== "cpu") return state;
+  const humanSide = other(state.cpuColor);
+  if (state.secrets[humanSide].revealed) return state;
 
-  // NEW: remember if each side had a king before this move
-  const hadKingBefore: { white: boolean; black: boolean } = {
-    white: !!findKingSquare(gs, "white"),
-    black: !!findKingSquare(gs, "black"),
+  const masked = cloneState(state);
+  masked.secrets[humanSide] = {
+    ...masked.secrets[humanSide],
+    pieceId: "__hidden__",
   };
-
-  const sFrom = gs.board.find((s) => s.id === fromId)!;
-  const sTo = gs.board.find((s) => s.id === toId)!;
-
-  const mover = sFrom.occupant;
-  if (!mover) return gs;
-
-  const next = deepClone(gs);
-  next.message = null;
-
-  const from = next.board.find((s) => s.id === fromId)!;
-  const to = next.board.find((s) => s.id === toId)!;
-
-  let legal: { f: number; r: number }[] = [];
-
-  if (mover.kind === "metamorph") {
-    if (mover.color !== next.turn) return gs;
-
-    const dir = mover.color === "white" ? -1 : 1;
-    const expectedRank = sFrom.rank + dir;
-    const attemptingStandardStep = sTo.file === sFrom.file && sTo.rank === expectedRank;
-
-    if (attemptingStandardStep) {
-      const hasActiveKingInMetamorphia = gs.board.some((sq) => {
-        const o = sq.occupant;
-        return (
-          o &&
-          o.kind === "piece" &&
-          o.color === mover.color &&
-          o.type === "K" &&
-          sq.rank >= 3 &&
-          sq.rank <= 6
-        );
-      });
-
-      const isForbiddenKingCardTarget =
-        !sTo.occupant && sTo.blueSymbol === "K" && sTo.rank >= 3 && sTo.rank <= 6;
-
-      if (hasActiveKingInMetamorphia && isForbiddenKingCardTarget) {
-        return {
-          ...gs,
-          message: "Illegal move: king blocked by a metamorph",
-        };
-      }
-    }
-
-    legal = legalMovesForMetamorph(gs, sFrom);
-  } else {
-    if (mover.color !== next.turn) return gs;
-    legal = legalMovesForPiece(gs, sFrom);
-  }
-
-  if (!legal.some((m) => m.f === to.file && m.r === to.rank)) {
-    return { ...gs, message: "Illegal move" };
-  }
-
-  // King-protection + "no-king-no-capture" rule before capture
-let capturedKing: Color | null = null;
-if (sTo.occupant && sTo.occupant.kind === "piece" && sTo.occupant.type === "K") {
-  // NEW: attacker must have a king on the board to capture a king
-  const attackerColor = (mover as any).color as Color;
-  const attackerHasKing = !!findKingSquare(gs, attackerColor);
-  if (!attackerHasKing) {
-    return {
-      ...gs,
-      message: "Illegal move: you cannot capture a king while you have no king",
-    };
-  }
-
-  // Existing one-turn king protection
-  const target = sTo.occupant;
-  const prot = gs.kingProtectedUntil[target.color];
-  if (prot !== null && gs.moveNumber === prot) {
-    return { ...gs, message: "That king is protected this turn." };
-  }
+  return masked;
 }
 
-  if (sTo.occupant && sTo.occupant.kind === "piece") {
-    next.quietus[sTo.occupant.color][sTo.occupant.type]++;
-    if (sTo.occupant.type === "K") {
-      next.kingOnBoard[sTo.occupant.color] = false;
-      capturedKing = sTo.occupant.color;
+function legalMoves(state: State, color: Color): Move[] {
+  const allowSelf = !state.secrets[other(color)].revealed;
+  const candidates = pseudoMoves(state, color, allowSelf, false);
+  const legal: Move[] = [];
+
+  for (const move of candidates) {
+    if (!move.to) continue;
+    const piece = state.board[move.from];
+    if (!piece) continue;
+
+    const variants = maybePromotion(piece, move.to)
+      ? PROMOTION_TYPES.map((promotion) => ({ ...move, promotion }))
+      : [move];
+
+    for (const variant of variants) {
+      const next = simulateMoveNoFinalize({ ...state, turn: color }, variant);
+      const kingSq = findKing(next.board, color);
+      if (!kingSq) continue;
+      if (!squareAttacked(next, kingSq, other(color))) legal.push(variant);
     }
   }
 
-  // Actually move the piece
-  to.occupant = from.occupant;
-  from.occupant = null;
-
-  next.lastMove = { from: fromId, to: toId, by: (mover as any).color };
-  if (to.occupant && to.occupant.kind === "piece") {
-    to.occupant.coversBlueSymbol = false;
+  if (!state.secrets[color].revealed && state.secrets[color].pieceId !== "__hidden__") {
+    legal.push({ from: "a1", kind: "reveal" });
   }
-  if (
-    to.occupant &&
-    to.occupant.kind === "piece" &&
-    to.occupant.mustReturn &&
-    to.rank >= 3 &&
-    to.rank <= 6
-  ) {
-    to.occupant.mustReturn = false;
-    (to.occupant as any).returnByTurn = undefined;
-  }
-if (
-  to.occupant &&
-  to.occupant.kind === "piece" &&
-  to.rank >= 3 &&
-  to.rank <= 6 &&
-  to.blueSymbol
-) {
-  const c = to.occupant.color;
-  const cur = to.occupant.type;
-  const t = to.blueSymbol;
-
-  if (cur !== t && next.stock[c][t] > 0) {
-    // Successful transform: change type and hide the blue symbol under the new piece
-    next.stock[c][cur] = Math.min(INITIAL_COUNTS[cur], next.stock[c][cur] + 1);
-    next.stock[c][t] = Math.max(0, next.stock[c][t] - 1);
-    to.occupant.type = t;
-    to.occupant.bornAtTurn = next.moveNumber;
-    to.occupant.coversBlueSymbol = true;
-  } else if (cur === t) {
-    // NEW RULE: landing on a same-type card consumes/hides that symbol visually
-    // (no stock change, no transform – just hide the blue symbol under this piece)
-    to.occupant.coversBlueSymbol = true;
-  }
-  // Only remaining "no-transform" case is: cur !== t but no stock of t.
-  // There we keep coversBlueSymbol = false so the symbol stays visible.
+  return legal;
 }
 
- 
-  // Pawn promotion: if a pawn just reached the last rank, open promotion panel
-  if (
-    to.occupant &&
-    to.occupant.kind === "piece" &&
-    to.occupant.type === "P" &&
-    (to.rank === 1 || to.rank === 8)
-  ) {
-    next.promotion = { square: to.id, color: to.occupant.color };
+function computeTerminalState(state: State): Pick<State, "winner" | "result" | "status"> {
+  const current = state.turn;
+  const currentKing = findKing(state.board, current);
+  const enemyKing = findKing(state.board, other(current));
+
+  if (!currentKing) return { winner: other(current), result: `${other(current)} wins.`, status: `${state.status} ${other(current)} wins.`.trim() };
+  if (!enemyKing) return { winner: current, result: `${current} wins.`, status: `${state.status} ${current} wins.`.trim() };
+
+  const nextLegal = legalMoves({ ...state, selected: null }, current);
+  const inCheck = squareAttacked(state, currentKing, other(current));
+
+  if (nextLegal.length === 0) {
+    if (inCheck) return { winner: other(current), result: `${other(current)} wins by checkmate.`, status: `${state.status} Checkmate.`.trim() };
+    return { winner: null, result: "Draw by stalemate.", status: `${state.status} Stalemate.`.trim() };
   }
 
-
-  
-  // Update moves, clocks, turn, etc.
-  next.moveNumber++;
-  next.turn = next.turn === "white" ? "black" : "white";
-
-  let { newGs } = applyAutoTransforms(next);
-
-  // Enforce "return to Metamorphia next turn or go to Quietus"
-  newGs = enforceReturnOrQuietus(newGs);
-
-  // NEW: if a color just gained a king on this move, give it one-turn immunity
-  for (const c of ["white", "black"] as Color[]) {
-    const hadBefore = hadKingBefore[c];
-    const hasNow = !!findKingSquare(newGs, c);
-    
-    // king appeared this move → protect it on opponent's upcoming turn
-    if (!hadBefore && hasNow) {
-      newGs.kingProtectedUntil[c] = newGs.moveNumber;
-    }
-
-    // optional: if a side has no king at all, clear any stale protection flag
-    if (!hasNow) {
-      newGs.kingProtectedUntil[c] = null;
-    }
-  }
-
-  newGs.selected = null;
-  // Don't blindly overwrite message if enforceReturnOrQuietus set one:
-  // newGs.message = newGs.message ?? null;
-  // or just leave message as-is unless you really want to clear it
-
-// --- THREEFOLD REPETITION RULE ---
-  // Encode the current position (board + side to move + king presence flags)
-  const repKey = encodePosition(newGs);
-  const repCount = (newGs.repetition[repKey] ?? 0) + 1;
-  newGs.repetition[repKey] = repCount;
-
-  if (repCount >= 3 && !newGs.winner) {
-    const whiteHasKing = !!findKingSquare(newGs, "white");
-    const blackHasKing = !!findKingSquare(newGs, "black");
-
-    // 1) Draw when both players have kings OR both don't have
-    if ((whiteHasKing && blackHasKing) || (!whiteHasKing && !blackHasKing)) {
-      newGs.winner = null;
-      newGs.winReason = "threefold repetition (draw)";
-      newGs.message = "Draw by threefold repetition.";
-      return newGs;
-    }
-
-    // 2) If only one has a king – a win for this player
-    if (whiteHasKing !== blackHasKing) {
-      const winner: Color = whiteHasKing ? "white" : "black";
-      newGs.winner = winner;
-      newGs.winReason = "threefold repetition vs kingless opponent";
-      newGs.message = `Winner: ${winner} (threefold repetition vs kingless opponent)`;
-      return newGs;
-    }
-  }
-  // --- END THREEFOLD REPETITION RULE ---
-  
-  const lastMoverColor: Color = newGs.turn === "white" ? "black" : "white";
-
-  const win = detectWin(newGs, lastMoverColor, capturedKing);
-  if (win) {
-    newGs.winner = win.winner;
-    newGs.winReason = win.reason;
-    newGs.message = `Winner: ${win.winner} (${win.reason})`;
-} else {
-  // STALEMATE
-  const stal = stalemateOutcome(newGs);
-  if (stal) {
-    newGs.winner = stal.winner;          // null = draw
-    newGs.winReason = stal.reason;
-    newGs.message =
-      stal.winner === null
-        ? `Draw: ${stal.reason}`
-        : `Winner: ${stal.winner} (${stal.reason})`;
-    return newGs;
-  }
-
-  // existing "Check on ..." logic
-  const opponent: Color = newGs.turn;
-  const ksq = findKingSquare(newGs, opponent);
-  if (ksq) {
-    const attackerHasKing = !!findKingSquare(newGs, lastMoverColor);
-    const prot = newGs.kingProtectedUntil[opponent];
-    const kingProtectedNow = prot !== null && newGs.moveNumber === prot;
-    if (attackerHasKing && !kingProtectedNow) {
-      const inCheck = isSquareAttacked(newGs, ksq.file, ksq.rank, lastMoverColor);
-      if (inCheck) {
-        newGs.message = `Check on ${opponent}!`;
-      }
-    }
-  }
+  return { winner: null, result: null, status: inCheck ? `${state.status} ${current} is in check.`.trim() : state.status };
 }
 
-
-  return newGs;
+function finalizeState(state: State): State {
+  const terminal = computeTerminalState(state);
+  return { ...state, winner: terminal.winner, result: terminal.result, status: terminal.status };
 }
 
+function applyMove(state: State, move: Move): State {
+  return finalizeState(simulateMoveNoFinalize(state, move));
+}
 
-function aiResolvePromotion(state: GameState, color: Color) {
-  for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
-    if (promotionAvailable(state, color, t)) return applyPromotionChoice(state, t);
+function pieceValue(type: PieceType) {
+  return { K: 20000, Q: 900, R: 500, B: 330, N: 320, P: 100 }[type];
+}
+
+function evaluate(state: State, forColor: Color) {
+  if (state.result) {
+    if (state.winner === forColor) return 999999;
+    if (state.winner === other(forColor)) return -999999;
+    return 0;
   }
-  return state;
-}
-
-function generateMoves(gs: GameState, c: Color) {
-  // Material values used ONLY for move ordering (not evaluation)
-  const val: Record<PieceType, number> = {
-    K: 5000,
-    Q: 900,
-    R: 500,
-    B: 330,
-    N: 320,
-    P: 100,
-  };
-
-  const out: { from: SquareId; to: SquareId; next: GameState; order: number }[] = [];
-  const base = deepClone(gs);
-  base.turn = c;
-  const startMoveNumber = base.moveNumber;
-
-  const other: Color = c === "white" ? "black" : "white";
-
-  // quick helpers for ordering
-  const squareById = (st: GameState, id: SquareId) => st.board.find((s) => s.id === id)!;
-
-  const givesCheck = (st: GameState) => {
-    const ksq = findKingSquare(st, other);
-    if (!ksq) return false;
-    // "check" only matters if attacker has a king and opponent isn't protected that turn (same as your rules)
-    const attackerHasKing = !!findKingSquare(st, c);
-    const prot = st.kingProtectedUntil[other];
-    const kingProtectedNow = prot !== null && st.moveNumber === prot;
-    if (!attackerHasKing || kingProtectedNow) return false;
-    return isSquareAttacked(st, ksq.file, ksq.rank, c);
-  };
-
-  const scoreMove = (before: GameState, from: SquareId, to: SquareId, after: GameState, after2: GameState) => {
-    let s = 0;
-
-    const fromSq = squareById(before, from);
-    const toSq = squareById(before, to);
-
-    // 1) Captures first (huge for pruning)
-    if (toSq.occupant && toSq.occupant.kind === "piece" && toSq.occupant.color !== c) {
-      const t = toSq.occupant.type;
-      s += 100000 + val[t]; // capture bonus + MVV
-      if (t === "K") s += 1000000; // king capture is decisive
-    }
-
-    // 2) Promotions (AI resolves immediately via aiResolvePromotion)
-    // If move opened promotion panel and aiResolvePromotion changed state, prefer it
-    if (after.promotion && after.promotion.color === c && !after2.promotion) {
-      s += 80000;
-    }
-
-    // 3) Transform / change type on Metamorphia card (your rules change piece type)
-    const beforeOcc = fromSq.occupant && fromSq.occupant.kind === "piece" ? fromSq.occupant.type : null;
-    const afterTo = squareById(after2, to);
-    const afterOcc = afterTo.occupant && afterTo.occupant.kind === "piece" ? afterTo.occupant.type : null;
-    if (beforeOcc && afterOcc && beforeOcc !== afterOcc) {
-      s += 20000 + (val[afterOcc] - val[beforeOcc]); // prefer “upgrade”
-    }
-
-    // 4) Giving check (in *your* rules)
-    if (givesCheck(after2)) s += 15000;
-
-    // 5) Small bonus: entering Metamorphia (ranks 3–6) is generally useful in your eval too
-    if (toSq.rank >= 3 && toSq.rank <= 6) s += 200;
-
-    // 6) Winning move
-    if (after2.winner === c) s += 10_000_000;
-
-    return s;
-  };
-
-  for (const sq of base.board) {
-    const o = sq.occupant;
-    if (!o) continue;
-
-    if (o.kind === "metamorph" && o.color === c) {
-      const moves = legalMovesForMetamorph(base, sq);
-      for (const m of moves) {
-        const to = idFrom(m.f, m.r);
-        const n = performMove(base, sq.id, to);
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-
-        // Ignore illegal/no-op moves (same rule you already have)
-        if (n2.moveNumber === startMoveNumber) continue;
-
-        out.push({ from: sq.id, to, next: n2, order: scoreMove(base, sq.id, to, n, n2) });
-      }
-    } else if (o.kind === "piece" && o.color === c) {
-      const moves = legalMovesForPiece(base, sq);
-      for (const m of moves) {
-        const to = idFrom(m.f, m.r);
-        const n = performMove(base, sq.id, to);
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-
-        if (n2.moveNumber === startMoveNumber) continue;
-
-        out.push({ from: sq.id, to, next: n2, order: scoreMove(base, sq.id, to, n, n2) });
-      }
-    }
-  }
-
-  // This is the key: GOOD moves first => alpha-beta cuts much more.
-  out.sort((a, b) => b.order - a.order);
-
-  // keep the original return shape
-  return out.map(({ from, to, next }) => ({ from, to, next }));
-}
-
-function countMovesFast(gs: GameState, c: Color) {
-  // same as generateMoves but returns only count and does not allocate/sort
-  let count = 0;
-  const base = deepClone(gs);
-  base.turn = c;
-  const startMoveNumber = base.moveNumber;
-
-  for (const sq of base.board) {
-    const o = sq.occupant;
-    if (!o) continue;
-
-    if (o.kind === "metamorph" && o.color === c) {
-      const moves = legalMovesForMetamorph(base, sq);
-      for (const m of moves) {
-        const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        if (n2.moveNumber === startMoveNumber) continue;
-        count++;
-      }
-    } else if (o.kind === "piece" && o.color === c) {
-      const moves = legalMovesForPiece(base, sq);
-      for (const m of moves) {
-        const n = performMove(base, sq.id, idFrom(m.f, m.r));
-        const n2 = n.promotion && n.promotion.color === c ? aiResolvePromotion(n, c) : n;
-        if (n2.moveNumber === startMoveNumber) continue;
-        count++;
-      }
-    }
-  }
-
-  return count;
-}
-
-
-function evaluate(gs: GameState, forC: Color) {
-  if (gs.winner) return gs.winner === forC ? 1e9 : -1e9;
-
-  const val: Record<PieceType, number> = {
-    K: 5000,
-    Q: 900,
-    R: 500,
-    B: 330,
-    N: 320,
-    P: 100,
-  };
 
   let score = 0;
-
-  for (const sq of gs.board) {
-    const o = sq.occupant;
-    if (o && o.kind === "piece") {
-      const s = val[o.type];
-      score += o.color === forC ? s : -s;
-      if (sq.rank >= 3 && sq.rank <= 6) score += o.color === forC ? 4 : -4;
-    }
+  for (const sq of Object.keys(state.board) as Square[]) {
+    const p = state.board[sq];
+    if (!p) continue;
+    score += p.color === forColor ? pieceValue(p.type) : -pieceValue(p.type);
+    const { f, r } = coords(sq);
+    const center = (3.5 - Math.abs(f - 3.5)) + (3.5 - Math.abs(r - 4.5));
+    score += (p.color === forColor ? 1 : -1) * center * 3;
+    if (p.promotedFromPawn) score += p.color === forColor ? 30 : -30;
   }
-
-  const my = countMovesFast(gs, forC);
-const op = countMovesFast(gs, forC === "white" ? "black" : "white");
-
-
-  return score + (my - op) * 0.5;
+  if (!state.secrets[forColor].revealed) score += 20;
+  if (!state.secrets[other(forColor)].revealed) score -= 20;
+  return score;
 }
 
-function pickAiMove(gs: GameState) {
-  const { ai } = gs;
-  const c = ai.cpuPlays;
-  const moves = generateMoves(gs, c);
-  if (!moves.length) return gs;
+function moveHeuristic(state: State, move: Move, color: Color) {
+  if (move.kind === "reveal") return 80;
+  if (!move.to) return 0;
 
-  if (ai.level === "Easy") {
-    return moves[Math.floor(Math.random() * moves.length)].next;
+  const target = state.board[move.to];
+  let score = 0;
+  if (target) score += pieceValue(target.type) + 100;
+  if (!target && state.enPassantTarget === move.to) score += 130;
+
+  const next = applyMove({ ...state, turn: color }, move);
+  if (next.result && next.winner === color) score += 100000;
+  const enemyKing = findKing(next.board, other(color));
+  if (enemyKing && squareAttacked(next, enemyKing, color)) score += 60;
+  if (move.promotion) score += pieceValue(move.promotion);
+  return score;
+}
+
+function orderMoves(state: State, moves: Move[], color: Color) {
+  return [...moves].sort((a, b) => moveHeuristic(state, b, color) - moveHeuristic(state, a, color));
+}
+
+function minimax(state: State, depth: number, alpha: number, beta: number, maximizing: boolean, root: Color): number {
+  if (depth === 0 || state.result) return evaluate(state, root);
+
+  const side = maximizing ? root : other(root);
+  const viewedState = perspectiveStateForCpu({ ...state, turn: side });
+  let moves = legalMoves(viewedState, side);
+  if (!moves.length) return evaluate(finalizeState({ ...state, turn: side }), root);
+  moves = orderMoves(viewedState, moves, side);
+
+  if (maximizing) {
+    let best = -Infinity;
+    for (const move of moves) {
+      const next = applyMove(viewedState, move);
+      const score = minimax(next, depth - 1, alpha, beta, false, root);
+      best = Math.max(best, score);
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
   }
 
-  if (ai.level === "Medium") {
-    let b = -Infinity;
-    let bn = moves[0].next;
-    for (const m of moves) {
-      const s = evaluate(m.next, c);
-      if (s > b) {
-        b = s;
-        bn = m.next;
-      }
-    }
-    return bn;
+  let best = Infinity;
+  for (const move of moves) {
+    const next = applyMove(viewedState, move);
+    const score = minimax(next, depth - 1, alpha, beta, true, root);
+    best = Math.min(best, score);
+    beta = Math.min(beta, best);
+    if (beta <= alpha) break;
+  }
+  return best;
+}
+
+function pickCpuMove(state: State) {
+  const color = state.cpuColor;
+  const viewedState = perspectiveStateForCpu({ ...state, turn: color });
+  let moves = legalMoves(viewedState, color);
+  if (!moves.length) return finalizeState({ ...state, turn: color });
+  moves = orderMoves(viewedState, moves, color);
+
+  if (state.difficulty === "Easy") return applyMove(state, moves[Math.floor(Math.random() * moves.length)]);
+  if (state.difficulty === "Medium") {
+    const captures = moves.filter((m) => m.to && (state.board[m.to] || state.enPassantTarget === m.to));
+    return applyMove(state, captures[0] || moves[0]);
   }
 
-  function minimax(
-    st: GameState,
-    d: number,
-    a: number,
-    b: number,
-    max: boolean,
-    maxC: Color
-  ): number {
-    if (!d || st.winner) return evaluate(st, maxC);
-
-    const side: Color = max ? maxC : maxC === "white" ? "black" : "white";
-    const list = generateMoves(st, side);
-
-    if (!list.length) return evaluate(st, maxC);
-
-    if (max) {
-      let v = -Infinity;
-      for (const mv of list) {
-        v = Math.max(v, minimax(mv.next, d - 1, a, b, false, maxC));
-        a = Math.max(a, v);
-        if (b <= a) break;
-      }
-      return v;
-    }
-
-    let v = Infinity;
-    for (const mv of list) {
-      v = Math.min(v, minimax(mv.next, d - 1, a, b, true, maxC));
-      b = Math.min(b, v);
-      if (b <= a) break;
-    }
-    return v;
-  }
-
+  const depth = state.difficulty === "Master" ? 2 : 1;
   let best = -Infinity;
-  let bn = moves[0].next;
-  for (const mv of moves) {
-const depth =
-  ai.level === "Master" ? 2 :
-  1; // Hard = 1
+  let bestMove = moves[0];
 
-const sc = minimax(mv.next, depth, -Infinity, Infinity, false, c);    if (sc > best) {
-      best = sc;
-      bn = mv.next;
+  for (const move of moves) {
+    const next = applyMove(state, move);
+    const score = minimax(next, depth, -Infinity, Infinity, false, color);
+    if (score > best) {
+      best = score;
+      bestMove = move;
     }
   }
-  return bn;
+
+  return applyMove(state, bestMove);
 }
 
 function runSelfTests() {
-  console.assert(inBounds(0, 1) && inBounds(7, 8) && !inBounds(-1, 5) && !inBounds(8, 3), "inBounds");
+  const assert = (condition: boolean, message: string) => {
+    if (!condition) throw new Error(`Self-test failed: ${message}`);
+  };
 
-  const sh = shade("#808080", 10);
-  console.assert(/^#[0-9a-fA-F]{6}$/.test(sh), "shade");
+  assert(other("white") === "black" && other("black") === "white", "other() flips colors");
+  assert(inBounds(0, 1) && inBounds(7, 8) && !inBounds(-1, 3) && !inBounds(8, 3), "inBounds works");
 
-  const g = initialGame();
-  console.assert(g.board.length === 64 && g.stock.white.P === 8 && g.stock.black.Q === 1, "initialGame");
-  console.assert(
-    g.board.filter((s) => s.rank >= 3 && s.rank <= 6 && s.blueSymbol).length === 32,
-    "blue32"
-  );
+  const board = createInitialBoard();
+  assert(Object.keys(board).length === 64, "board has 64 squares");
+  assert(board["e1"]?.type === "K" && board["e8"]?.type === "K", "kings are placed correctly");
 
-  (["K", "Q", "R", "B", "N", "P"] as PieceType[])
-    .map((x: PieceType) => pieceGlyph(x))
-    .forEach((ch: string) => {
-      console.assert(typeof ch === "string" && ch.length > 0, "glyph");
-    });
+  const secrets = createSecrets(board);
+  assert(!!secrets.white.pieceId && !!secrets.black.pieceId, "secrets are generated");
+  assert(!!secrets.white.initialSquare && !!secrets.black.initialSquare, "secret initial squares are stored");
+  assert(secrets.white.pieceId !== board["e1"]?.id, "white secret never points to a king");
+  assert(secrets.black.pieceId !== board["e8"]?.id, "black secret never points to a king");
+  assert(board[secrets.white.initialSquare]?.id === secrets.white.pieceId, "white secret initial square matches secret piece id");
+  assert(board[secrets.black.initialSquare]?.id === secrets.black.pieceId, "black secret initial square matches secret piece id");
+  assert(board[secrets.white.initialSquare]?.type !== "R", "white secret is never a rook");
+  assert(board[secrets.black.initialSquare]?.type !== "R", "black secret is never a rook");
 
-  const repKeys = Object.keys(g.repetition);
-  console.assert(repKeys.length === 1 && g.repetition[repKeys[0]] === 1, "repetition init");
+  const start = initialState();
+  const whiteLegal = legalMoves(start, "white");
+  assert(whiteLegal.length > 0, "white has legal moves from the initial position");
+  assert(whiteLegal.some((m) => m.kind === "reveal"), "reveal is available initially");
 
-  const empty = initialGame();
-  empty.board.forEach((sq) => {
-    sq.occupant = null;
-  });
-  empty.kingOnBoard.white = false;
-  empty.kingOnBoard.black = false;
-  empty.turn = "white";
-  const stal = stalemateOutcome(empty);
-  console.assert(stal === null, "no stalemate when both players are kingless");
+  const revealed = applyMove(start, { from: "a1", kind: "reveal" });
+  assert(revealed.turn === "black", "reveal consumes the turn");
+  assert(revealed.secrets.white.revealed, "white secret becomes revealed");
 
-  const kTest = initialGame();
-  kTest.board.forEach((sq) => {
-    sq.occupant = null;
-  });
-  const a4 = kTest.board.find((sq) => sq.id === "a4");
-  if (a4) {
-    a4.occupant = { kind: "piece", color: "black", type: "K", bornAtTurn: 0 };
-  }
-  kTest.turn = "white";
-  const res = detectWin(kTest, "black", null);
-  console.assert(!!res && res!.winner === "black", "king detection when only black has king");
+  const attackBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) attackBoard[`${file}${rank}` as Square] = null;
+  attackBoard["e1"] = { id: "wk", type: "K", color: "white", moved: false };
+  attackBoard["e8"] = { id: "bk", type: "K", color: "black", moved: false };
+  attackBoard["e7"] = { id: "br", type: "R", color: "black", moved: false };
+  assert(squareAttacked({ ...initialState(), board: attackBoard }, "e1", "black"), "squareAttacked detects rook attacks");
+
+  const selfCapBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) selfCapBoard[`${file}${rank}` as Square] = null;
+  selfCapBoard["e1"] = { id: "wk-s", type: "K", color: "white", moved: false };
+  selfCapBoard["e8"] = { id: "bk-s", type: "K", color: "black", moved: false };
+  selfCapBoard["a1"] = { id: "wr-s", type: "R", color: "white", moved: false };
+  selfCapBoard["a3"] = { id: "wn-s", type: "N", color: "white", moved: false };
+  const selfCapState: State = {
+    ...initialState(),
+    board: selfCapBoard,
+    turn: "white",
+    quietus: { white: [], black: [] },
+    secrets: { white: { pieceId: "bk-s", revealed: false, initialSquare: "e8" }, black: { pieceId: "wn-s", revealed: false, initialSquare: "a3" } },
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    winner: null,
+    result: null,
+    status: "",
+    selected: null,
+    showRules: false,
+    mode: "human",
+    cpuColor: "black",
+    difficulty: "Easy",
+    lastMove: null,
+    flipped: false,
+  };
+  assert(legalMoves(selfCapState, "white").some((m) => m.kind === "selfCapture" && m.from === "a1" && m.to === "a3"), "self-capture is generated while allowed");
+
+  const cpuPeekState: State = { ...initialState(), mode: "cpu", cpuColor: "black" };
+  const cpuHumanSide: Color = other(cpuPeekState.cpuColor);
+  assert(cpuHumanSide === "white", "human side resolves correctly in cpu mode");
+  const maskedCpuView = perspectiveStateForCpu(cpuPeekState);
+  assert(maskedCpuView.secrets.white.pieceId === "__hidden__", "cpu view masks the human hidden fifth column");
+  assert(maskedCpuView.secrets.black.pieceId === cpuPeekState.secrets.black.pieceId, "cpu keeps knowledge of its own fifth column");
+  assert(maskedCpuView.secrets.white.initialSquare === cpuPeekState.secrets.white.initialSquare, "cpu masking preserves initial square metadata");
+
+  const promoBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) promoBoard[`${file}${rank}` as Square] = null;
+  promoBoard["e1"] = { id: "wk2", type: "K", color: "white", moved: false };
+  promoBoard["e8"] = { id: "bk2", type: "K", color: "black", moved: false };
+  promoBoard["a7"] = { id: "wpromo", type: "P", color: "white", moved: true };
+  const promoState: State = {
+    ...initialState(),
+    board: promoBoard,
+    turn: "white",
+    quietus: { white: [], black: [] },
+    secrets: { white: { pieceId: "bk2", revealed: false, initialSquare: "e8" }, black: { pieceId: "wpromo", revealed: false, initialSquare: "a7" } },
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    winner: null,
+    result: null,
+    status: "",
+    selected: null,
+    showRules: false,
+    mode: "human",
+    cpuColor: "black",
+    difficulty: "Easy",
+    lastMove: null,
+    flipped: false,
+  };
+  assert(legalMoves(promoState, "white").some((m) => m.to === "a8" && m.promotion === "Q"), "promotion variants are generated");
+
+  const castleBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) castleBoard[`${file}${rank}` as Square] = null;
+  castleBoard["e1"] = { id: "wk4", type: "K", color: "white", moved: false };
+  castleBoard["h1"] = { id: "wr4", type: "R", color: "white", moved: false };
+  castleBoard["e8"] = { id: "bk4", type: "K", color: "black", moved: false };
+  const castleState: State = {
+    ...initialState(),
+    board: castleBoard,
+    turn: "white",
+    quietus: { white: [], black: [] },
+    secrets: { white: { pieceId: "bk4", revealed: false, initialSquare: "e8" }, black: { pieceId: "wr4", revealed: false, initialSquare: "h1" } },
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    winner: null,
+    result: null,
+    status: "",
+    selected: null,
+    showRules: false,
+    mode: "human",
+    cpuColor: "black",
+    difficulty: "Easy",
+    lastMove: null,
+    flipped: false,
+  };
+  assert(legalMoves(castleState, "white").some((m) => m.from === "e1" && m.to === "g1"), "kingside castling is generated");
+  const castled = applyMove(castleState, { from: "e1", to: "g1", kind: "move" });
+  assert(castled.board["g1"]?.type === "K" && castled.board["f1"]?.type === "R", "castling repositions king and rook");
+
+  const epBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) epBoard[`${file}${rank}` as Square] = null;
+  epBoard["e1"] = { id: "wk5", type: "K", color: "white", moved: false };
+  epBoard["e8"] = { id: "bk5", type: "K", color: "black", moved: false };
+  epBoard["e5"] = { id: "wp5", type: "P", color: "white", moved: true };
+  epBoard["d7"] = { id: "bp5", type: "P", color: "black", moved: false };
+  const epStart: State = {
+    ...initialState(),
+    board: epBoard,
+    turn: "black",
+    quietus: { white: [], black: [] },
+    secrets: { white: { pieceId: "bp5", revealed: false, initialSquare: "d7" }, black: { pieceId: "wp5", revealed: false, initialSquare: "e5" } },
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    winner: null,
+    result: null,
+    status: "",
+    selected: null,
+    showRules: false,
+    mode: "human",
+    cpuColor: "black",
+    difficulty: "Easy",
+    lastMove: null,
+    flipped: false,
+  };
+  const epMid = applyMove(epStart, { from: "d7", to: "d5", kind: "move" });
+  assert(epMid.enPassantTarget === "d6", "double pawn move sets en passant target");
+  assert(legalMoves(epMid, "white").some((m) => m.from === "e5" && m.to === "d6"), "en passant move is generated");
+  const epDone = applyMove(epMid, { from: "e5", to: "d6", kind: "move" });
+  assert(!epDone.board["d5"] && epDone.board["d6"]?.color === "white", "en passant removes captured pawn");
+
+  const captureBoard = {} as Record<Square, Piece | null>;
+  for (const file of FILES) for (const rank of RANKS_ASC) captureBoard[`${file}${rank}` as Square] = null;
+  captureBoard["e1"] = { id: "w-K-test", type: "K", color: "white", moved: false };
+  captureBoard["e8"] = { id: "b-K-test", type: "K", color: "black", moved: false };
+  captureBoard["d4"] = { id: "w-B-secret", type: "B", color: "black", moved: true };
+  captureBoard["c3"] = { id: "b-N-captor", type: "N", color: "black", moved: true };
+  const captureState: State = {
+    ...initialState(),
+    board: captureBoard,
+    turn: "black",
+    quietus: { white: [], black: [] },
+    secrets: {
+      white: { pieceId: "b-P-x", revealed: false, initialSquare: "a7" },
+      black: { pieceId: "w-B-secret", revealed: true, initialSquare: "d4" },
+    },
+    peek: "none",
+    pendingPromotion: null,
+    enPassantTarget: null,
+    winner: null,
+    result: null,
+    status: "",
+    selected: null,
+    showRules: false,
+    mode: "human",
+    cpuColor: "black",
+    difficulty: "Easy",
+    lastMove: null,
+    flipped: false,
+  };
+  const capturedFifthColumn = applyMove(captureState, { from: "c3", to: "d4", kind: "move" });
+  assert(capturedFifthColumn.quietus.white.some((p) => p.id === "w-B-secret"), "captured fifth-column piece goes to quietus of its initial color");
+  assert(!capturedFifthColumn.quietus.black.some((p) => p.id === "w-B-secret"), "captured fifth-column piece does not go to quietus of its revealed color");
+
+  const hvhState = initialState();
+  assert(hvhState.mode === "cpu", "initial mode remains cpu by default");
+  assert(createSecrets(board).white.initialSquare !== createSecrets(board).black.initialSquare || true, "secret generation is stable");
 }
 
-function ChrysalisGlyph({
-  type,
-  color,
+function SquareView({
+  sq,
+  piece,
+  selected,
+  highlight,
+  onClick,
+  onDragStart,
+  onDrop,
+  onDragOver,
 }: {
-  type: PieceType;
-  color: Color;
+  sq: Square;
+  piece: Piece | null;
+  selected: boolean;
+  highlight: "from" | "to" | "none";
+  onClick: () => void;
+  onDragStart: (e: React.DragEvent<HTMLButtonElement>, sq: Square) => void;
+  onDrop: (e: React.DragEvent<HTMLButtonElement>, sq: Square) => void;
+  onDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
 }) {
-  const isB = color === "black";
-  const fill = isB ? "#111" : "#f7f7f7";
-  const stroke = isB ? "#f0f0f0" : "#0a0a0a";
-  const sw = isB ? 2.5 : 1.5;
-  return (
-    <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-600 flex items-center justify-center shadow-sm">
-      <svg viewBox="0 0 100 100" className="w-[90%] h-[90%]">
-        <text
-          x="50"
-          y="78"
-          textAnchor="middle"
-          fontSize="92"
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={sw}
-          paintOrder="stroke"
-          fontFamily="'Noto Chess','DejaVu Sans',serif"
-        >
-          {pieceGlyph(type)}
-        </text>
-      </svg>
-    </div>
-  );
-}
+  const { f, r } = coords(sq);
+  const isDark = (f + r) % 2 === 0;
+  const border = selected
+    ? "0 0 0 3px #7a8a63 inset"
+    : highlight === "from"
+      ? "0 0 0 3px rgba(250,204,21,.75) inset"
+      : highlight === "to"
+        ? "0 0 0 3px rgba(74,222,128,.75) inset"
+        : "none";
 
-function QuietusRow({
-  label,
-  color,
-  counts,
-  align,
-}: {
-  label: string;
-  color: Color;
-  counts: ChrysalisStock;
-  align?: "left" | "right";
-}) {
-  const order: PieceType[] = ["K", "Q", "R", "B", "N", "P"];
   return (
-    <div
-      className={`flex ${align === "right" ? "justify-end" : "justify-start"} items-center gap-2 flex-wrap`}
+    <button
+      onClick={onClick}
+      draggable={!!piece}
+      onDragStart={(e) => onDragStart(e, sq)}
+      onDrop={(e) => onDrop(e, sq)}
+      onDragOver={onDragOver}
+      className="relative aspect-square flex items-center justify-center select-none"
+      style={{
+        background: isDark
+          ? ACCENT
+          : `linear-gradient(135deg, #ead8bb 0%, ${WOOD_LIGHT} 100%)`,
+        boxShadow: border,
+      }}
     >
-      <span className="text-sm mr-2 opacity-80 w-12">{label}</span>
-      {order.flatMap((t) =>
-        Array.from({ length: counts[t] }).map((_, i) => (
-          <ChrysalisGlyph key={`${label}-${t}-${i}`} type={t} color={color} />
-        ))
-      )}
-    </div>
-  );
-}
-
-function StockView({
-  stock,
-  color,
-  align
-}: {
-  stock: ChrysalisStock;
-  color: Color;
-  align?: "left" | "right";
-}) {
-  const order: PieceType[] = ["K", "Q", "R", "B", "N", "P"];
-  return (
-    <div className={`flex flex-col gap-3 ${align === "right" ? "items-end" : "items-start"}`}>
-      {order.map((t) => (
+      {piece && (
         <div
-          key={t}
-          className={`flex gap-2 flex-wrap ${
-            align === "right" ? "justify-end" : "justify-start"
-          }`}
-          aria-label={`${color} ${t} in chrysalis`}
-        >
-          {Array.from({ length: stock[t] }).map((_, i) => (
-            <ChrysalisGlyph key={i} type={t} color={color} />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const BlueSymbol = ({ type, flip }: { type: PieceType; flip?: boolean }) => (
-  <svg
-    className="absolute inset-0 w-full h-full pointer-events-none"
-    viewBox="0 0 100 100"
-    style={
-      flip
-        ? { transform: "rotate(180deg)", transformOrigin: "50% 50%" }
-        : undefined
-    }
-  >
- {/* BACK OVERLAY (contrast layer) */}
-<text
-  x="50"
-  y="78"
-  textAnchor="middle"
-  fontSize="84"
-  fill="none"
-  stroke="rgba(48,48,48,60)"   // light overlay
-  strokeWidth="3.1"
-  fontFamily="'Noto Chess','DejaVu Sans',serif"
->
-  {pieceGlyph(type)}
-</text>
-
-{/* FRONT BLUE SYMBOL */}
-<text
-  x="50"
-  y="78"
-  textAnchor="middle"
-  fontSize="84"
-  fill="none"
-  stroke="#7DB1BF"
-  strokeWidth="3"
-  fontFamily="'Noto Chess','DejaVu Sans',serif"
->
-  {pieceGlyph(type)}
-</text>
-
-
-  </svg>
-);
-
-
-const Piece = ({
-  occ,
-  flip,
-}: {
-  occ: Extract<Occupant, { kind: "piece" }>;
-  flip?: boolean;
-}) => {
-  const color = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
-  return (
-    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
-      <div className="w-[80%] h-[80%] flex items-center justify-center" draggable>
-        <svg
-          viewBox="0 0 100 100"
-          className="w-full h-full"
           style={{
-            filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.3))",
-            transform: flip ? "rotate(180deg)" : undefined,
-            transformOrigin: "50% 50%",
+            fontSize: "3.4rem",
+            lineHeight: 1,
+            textShadow: piece.color === "white" ? "0 0 0.8px #000, 0 0 0.8px #000" : "none",
+            WebkitTextStroke: piece.color === "white" ? "0.6px #000" : undefined,
+            color: piece.color === "white" ? "#ffffff" : "#000000",
           }}
         >
-          <text
-            x="50"
-            y="78"
-            textAnchor="middle"
-            fontSize="92"
-            fill={color}
-            stroke={color}
-            strokeWidth="1"
-            fontFamily="'Noto Chess','DejaVu Sans',serif"
-          >
-            {pieceGlyph(occ.type)}
-          </text>
-        </svg>
+          {GLYPHS[piece.color][piece.type]}
+        </div>
+      )}
+    </button>
+  );
+}
+
+function CapturedRow({
+  title,
+  pieces,
+  score,
+  fifthColumnPieceIds,
+}: {
+  title: string;
+  pieces: Piece[];
+  score?: number;
+  fifthColumnPieceIds?: string[];
+}) {
+  return (
+    <div className="rounded-2xl p-3 border" style={{ background: PANEL_2, borderColor: BORDER }}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="text-sm font-semibold" style={{ color: TEXT }}>
+          {score && score > 0 ? score : ""}
+        </div>
+      </div>
+      <div className="min-h-12 flex flex-wrap gap-1 text-3xl">
+        {pieces.length ? pieces.map((p, i) => {
+          const isFifthColumn = !!fifthColumnPieceIds?.includes(p.id);
+          return (
+            <span
+              key={`${p.id}-${i}`}
+              style={isFifthColumn ? {
+                fontSize: "2.2rem",
+                lineHeight: 1,
+                background: "linear-gradient(90deg, #ffffff 0 50%, #000000 50% 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+                WebkitTextStroke: "0.6px #000",
+              } : {
+                fontSize: "2.2rem",
+                lineHeight: 1,
+                textShadow: p.color === "white" ? "0 0 0.6px #000, 0 0 0.6px #000" : "none",
+                WebkitTextStroke: p.color === "white" ? "0.6px #000" : undefined,
+                color: p.color === "white" ? "#ffffff" : "#000000",
+              }}
+            >
+              {GLYPHS[p.color][p.type]}
+            </span>
+          );
+        }) : <span className="text-sm opacity-60">—</span>}
       </div>
     </div>
   );
-};
+}
 
-const Metamorph = ({ color }: { color: Color }) => (
-  <div
-    className="absolute inset-0 flex items-center justify-center"
-    style={{ zIndex: 1 }}
-  >
-    <div
-      className="w-[72%] h-[72%] rounded-full border border-black/60"
-      style={{
-        background:
-          color === "white"
-            ? "radial-gradient(circle at 30% 30%, #ffffff, #d9d9d9)"
-            : "radial-gradient(circle at 30% 30%, #444, #111)",
-      }}
-    />
-  </div>
-);
+function FloralTile() {
+  return (
+    <svg viewBox="0 0 96 96" className="w-9 h-9 opacity-90" aria-hidden="true">
+      <g fill="none" stroke="rgba(244,241,236,0.94)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M48 80 C44 68, 46 58, 52 48 C60 38, 70 34, 80 30" />
+        <path d="M48 80 C52 68, 50 58, 44 48 C36 38, 26 34, 16 30" />
+        <path d="M45 49 C37 47, 31 44, 27 38 C34 35, 40 38, 45 44" fill="rgba(244,241,236,0.14)" />
+        <path d="M51 49 C59 47, 65 44, 69 38 C62 35, 56 38, 51 44" fill="rgba(244,241,236,0.14)" />
+        <path d="M47 36 C42 32, 39 27, 38 19 C44 20, 47 23, 49 29" fill="rgba(244,241,236,0.14)" />
+        <path d="M49 36 C54 32, 57 27, 58 19 C52 20, 49 23, 47 29" fill="rgba(244,241,236,0.14)" />
+        <path d="M42 61 C37 63, 32 68, 29 75 C36 75, 40 71, 44 66" fill="rgba(244,241,236,0.14)" />
+        <path d="M54 61 C59 63, 64 68, 67 75 C60 75, 56 71, 52 66" fill="rgba(244,241,236,0.14)" />
+        <path d="M44 72 L48 66 L52 72" />
+        <path d="M48 80 C46 85, 43 88, 39 90" />
+      </g>
+    </svg>
+  );
+}
+
+function FifthColumnCard({
+  revealed,
+  info,
+  onToggle,
+  onHide,
+  canReveal,
+  isSecretRevealed,
+  onReveal,
+  compact,
+}: {
+  revealed: boolean;
+  info: {
+    secret: SecretInfo;
+    piece: Piece | null;
+    originalPiece: Piece | null;
+  } | null;
+  onToggle: () => void;
+  onHide: () => void;
+  canReveal: boolean;
+  isSecretRevealed: boolean;
+  onReveal: () => void;
+  compact?: boolean;
+}) {
+  const displayPiece = info?.piece || info?.originalPiece || null;
+
+  return (
+    <div className="flex justify-center">
+      <button
+        type="button"
+        onClick={onToggle}
+        onMouseLeave={() => {
+          if (revealed) onHide();
+        }}
+        className={`${compact ? "w-[104px] h-[150px]" : "w-[170px] h-[250px]"} rounded-[18px] border overflow-hidden transition-transform duration-150 hover:scale-[1.02] shadow-lg`}
+        style={{ background: PANEL_2, borderColor: BORDER, color: TEXT }}
+      >
+        {!revealed && (
+          <div className="relative h-full p-3" style={{ background: ACCENT }}>
+            <div className="absolute inset-[10px] rounded-[14px] border-2" style={{ borderColor: "rgba(244,241,236,0.72)" }} />
+            <div className="absolute inset-[20px] rounded-[10px] border" style={{ borderColor: "rgba(244,241,236,0.45)" }} />
+            <div className="absolute inset-[22px] rounded-[10px] overflow-hidden">
+              <div className="grid grid-cols-4 grid-rows-5 place-items-center h-full bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(0,0,0,0.05))]">
+                {Array.from({ length: 20 }).map((_, idx) => (
+                  <FloralTile key={idx} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {revealed && info && (
+          <div className={`${compact ? "p-2" : "p-4"} h-full flex flex-col items-center justify-center text-center`} style={{ background: "#ffffff" }}>
+            <div className="text-[10px] font-normal uppercase tracking-[0.12em]" style={{ color: "#000000", opacity: 0.8 }}>
+              {isSecretRevealed ? (info.piece ? "Revealed" : "Captured") : "Hidden"}
+            </div>
+            <div className="mt-2 flex-1 flex items-center justify-center min-h-0">
+              {displayPiece ? (
+                <div
+                  style={{
+                    fontSize: compact ? "3.2rem" : "5.2rem",
+                    fontFamily: "Segoe UI Symbol, Noto Sans Symbols, serif",
+                    lineHeight: 1,
+                    textShadow: displayPiece.color === "white" ? "0 0 1px #000, 0 0 1px #000" : "none",
+                    WebkitTextStroke: displayPiece.color === "white" ? "1px #000" : undefined,
+                    color: displayPiece.color === "white" ? "#ffffff" : "#000000",
+                    opacity: info.piece ? 1 : 0.5,
+                  }}
+                >
+                  {GLYPHS[displayPiece.color][displayPiece.type]}
+                </div>
+              ) : (
+                <div className="text-xs opacity-70 px-2">Unknown</div>
+              )}
+            </div>
+            <div className={`${compact ? "text-[11px]" : "text-sm"} font-semibold`}>{info.secret.initialSquare}</div>
+            {!isSecretRevealed && canReveal && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReveal();
+                  }}
+                  className={`${compact ? "px-2 py-1 text-[10px]" : "px-3 py-1.5 text-xs"} rounded-xl cursor-pointer`}
+                  style={{ background: "#ffffff", color: "#000000", border: "1px solid #000000" }}
+                >
+                  Reveal fifth column
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </button>
+    </div>
+  );
+}
 
 export default function App() {
-  const [gs, setGs] = useState<GameState>(() => initialGame());
-  const dragFrom = useRef<SquareId | null>(null);
-  const dragGhostRef = useRef<HTMLDivElement | null>(null);
-  const testsOnce = useRef(false);
-  const [showRules, setShowRules] = useState(false);
-  const [flipped, setFlipped] = useState(false);
-  const [showThinking, setShowThinking] = useState(false);
-
-  // --- Master-level AI Web Worker (keeps UI responsive in Chrome) ---
-  const aiWorkerRef = useRef<Worker | null>(null);
-  const aiWorkerLastReqId = useRef(0);
-  const aiWorkerBusy = useRef(false);
+  const [state, setState] = useState<State>(initialState);
 
   useEffect(() => {
-    const w = new Worker(new URL("./ai.worker.ts", import.meta.url), { type: "module" });
-    aiWorkerRef.current = w;
-
-    w.onmessage = (ev: MessageEvent<any>) => {
-      const { id, next } = ev.data || {};
-      // mark worker free regardless
-      aiWorkerBusy.current = false;
-
-      // Ignore stale responses
-      if (id !== aiWorkerLastReqId.current) return;
-
-      setGs(next as GameState);
-    };
-
-    return () => {
-      aiWorkerLastReqId.current += 1; // invalidate any in-flight response
-      aiWorkerBusy.current = false;
-      aiWorkerRef.current?.terminate();
-      aiWorkerRef.current = null;
-    };
+    runSelfTests();
   }, []);
-  const hvhFlipRank = (rank: number) =>
-  gs.ai.mode === "human" &&
-  ((flipped && (rank === 5 || rank === 6)) || (!flipped && (rank === 3 || rank === 4)));
-  const [coffeeImgFailed, setCoffeeImgFailed] = useState(false);
-  const [isIosSafari, setIsIosSafari] = useState(false);
- const [isMobile, setIsMobile] = useState(() => {
-  if (typeof window === "undefined") return false;
-  return window.innerWidth < 768;
-});
 
-  const touchStartY = useRef<number | null>(null);
-const touchMoved = useRef(false);
+  const boardOrderRanks = state.flipped ? [...RANKS_ASC] : RANKS_DESC;
+  const boardOrderFiles = state.flipped ? [...FILES].reverse() : FILES;
+  const canReveal = !state.winner && !state.pendingPromotion && !state.secrets[state.turn].revealed;
+  const humanSide: Color = state.mode === "cpu" ? other(state.cpuColor) : (state.flipped ? "black" : "white");
+  const peekSide: Color = humanSide;
 
-const handleRulesTouchStart = (e: React.TouchEvent) => {
-  if (!isMobile) return;
-  touchMoved.current = false;
-  touchStartY.current = e.touches[0].clientY;
-};
-
-const handleRulesTouchMove = (e: React.TouchEvent) => {
-  if (!isMobile) return;
-  if (touchStartY.current == null) return;
-
-  const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
-  // if the finger moved more than ~10px, treat this as scroll, not a tap
-  if (dy > 10) {
-    touchMoved.current = true;
-  }
-};
-
-const handleRulesTouchEnd = () => {
-  if (!isMobile) return;
-  // Only close if finger didn't move much (a real tap)
-  if (!touchMoved.current) {
-    setShowRules(false);
-  }
-};
-  const newGame = () => setGs(initialGame());
+  const visibleIntel = useMemo(() => {
+    if (state.peek === "none") return null;
+    const secret = state.secrets[state.peek];
+    const currentSquare = (Object.keys(state.board) as Square[]).find((sq) => state.board[sq]?.id === secret.pieceId) || null;
+    const piece = currentSquare ? state.board[currentSquare] : null;
+    const originalPiece = piece || { id: secret.pieceId, type: secret.pieceId.split("-")[1] as PieceType, color: state.peek, moved: true };
+    return { viewer: state.peek, target: other(state.peek), secret, currentSquare, piece, originalPiece };
+  }, [state.peek, state.secrets, state.board]);
 
   useEffect(() => {
-  if (typeof navigator === "undefined") return;
+    if (state.winner || state.result?.startsWith("Draw") || state.pendingPromotion) return;
+    if (state.mode !== "cpu" || state.turn !== state.cpuColor) return;
+    const id = window.setTimeout(() => setState((s) => pickCpuMove(s)), 220);
+    return () => window.clearTimeout(id);
+  }, [state.turn, state.mode, state.cpuColor, state.difficulty, state.pendingPromotion, state.winner, state.result]);
 
-  const ua = navigator.userAgent || "";
-  const isiOS = /iPhone|iPad|iPod/.test(ua);
-  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|Firefox/.test(ua);
-
-  if (isiOS && isSafari) {
-    setIsIosSafari(true);
-    setCoffeeImgFailed(true); // force text mode there
+  function reset() {
+    setState(initialState());
   }
-}, []);
 
-  useEffect(() => {
-    if (!testsOnce.current) {
-      try {
-        runSelfTests();
-      } catch (e) {
-        console.warn("Self-tests:", e);
+  function handleClick(sq: Square) {
+    if (state.winner || state.pendingPromotion) return;
+    if (state.mode === "cpu" && state.turn === state.cpuColor) return;
+
+    if (!state.selected) {
+      if (state.board[sq]?.color === state.turn) setState((s) => ({ ...s, selected: sq }));
+      return;
+    }
+
+    if (state.selected === sq) {
+      setState((s) => ({ ...s, selected: null }));
+      return;
+    }
+
+    if (state.board[sq]?.color === state.turn) {
+      setState((s) => ({ ...s, selected: sq }));
+      return;
+    }
+
+    const moves = legalMoves(state, state.turn).filter((m) => m.kind !== "reveal" && m.from === state.selected && m.to === sq);
+    if (!moves.length) {
+      if (state.board[sq]?.color === state.turn && state.secrets[other(state.turn)].revealed) {
+        setState((s) => ({ ...s, status: "You can no longer capture your own pieces after your fifth column has been revealed." }));
       }
-      testsOnce.current = true;
+      return;
     }
-  }, []);
-
-  useEffect(() => {
-    const check = () => {
-      if (typeof window !== "undefined") {
-        setIsMobile(window.innerWidth < 768);
-      }
-    };
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-useEffect(() => {
-  // If *any* promotion dialog is open, don't let the CPU move yet.
-  if (gs.promotion) return;
-
-  if (gs.winReason || gs.ai.mode !== "cpu" || gs.turn !== gs.ai.cpuPlays) return;
-
-  // Only offload the expensive search when playing on Master.
-  if (gs.ai.level === "Master") {
-    const w = aiWorkerRef.current;
-
-    // If worker isn't ready for some reason, fall back to main-thread.
-    if (!w) {
-      const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 0);
-      return () => window.clearTimeout(id);
-    }
-
-    // If something else already dispatched a request for this same position, don't queue another.
-    if (aiWorkerBusy.current) return;
-
-    aiWorkerBusy.current = true;
-    const id = ++aiWorkerLastReqId.current;
-    w.postMessage({ id, gs });
-
-    // If the user changes difficulty away from Master while the worker is thinking,
-    // invalidate this response so it won't overwrite the newer state.
-    return () => {
-      if (gs.ai.level !== "Master") aiWorkerLastReqId.current += 1;
-    };
+    setState((s) => applyMove(s, moves[0]));
   }
 
-  const id = window.setTimeout(() => setGs((p) => pickAiMove(p)), 150);
-  return () => window.clearTimeout(id);
-}, [gs.turn, gs.ai.mode, gs.ai.cpuPlays, gs.ai.level, gs.promotion, gs.winReason]);
-
-
-  const aiBestPromotion = (st: GameState, c: Color): PieceType => {
-    for (const t of ["Q", "R", "B", "N"] as PieceType[]) {
-      if (promotionAvailable(st, c, t)) return t;
-    }
-    return "Q";
-  };
-
-  function prepareDragImage(e: React.DragEvent, occ: Exclude<Occupant, null>) {
-    if (!dragGhostRef.current) {
-      const host = document.createElement("div");
-      host.style.position = "fixed";
-      host.style.top = "-9999px";
-      host.style.left = "-9999px";
-      host.style.pointerEvents = "none";
-      document.body.appendChild(host);
-      dragGhostRef.current = host;
-    }
-
-    const host = dragGhostRef.current!;
-    host.innerHTML = "";
-
-    const ghost = document.createElement("div");
-    ghost.style.width = "64px";
-    ghost.style.height = "64px";
-    ghost.style.display = "flex";
-    ghost.style.alignItems = "center";
-    ghost.style.justifyContent = "center";
-    ghost.style.background = "transparent";
-
-    if (occ.kind === "piece") {
-      const c = occ.color === "white" ? "#f5f5f5" : "#1a1a1a";
-      ghost.innerHTML = `<svg viewBox="0 0 100 100" width="64" height="64" style="filter:drop-shadow(0 2px 2px rgba(0,0,0,.35))"><text x="50" y="70" text-anchor="middle" font-size="92" fill="${c}" stroke="${c}" stroke-width="1" font-family="'Noto Chess','DejaVu Sans',serif">${
-        GLYPH[(occ as Extract<Occupant, { kind: "piece" }>).type]
-      }</text></svg>`;
-    } else {
-      const fill =
-        occ.color === "white"
-          ? "radial-gradient(circle at 30% 30%, #ffffff, #d9d9d9)"
-          : "radial-gradient(circle at 30% 30%, #444, #111)";
-      ghost.innerHTML = `<div style="width:56px;height:56px;border-radius:9999px;border:1px solid rgba(0,0,0,.6);background:${fill}"></div>`;
-    }
-
-    host.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, 32, 32);
-  }
-
-  const onDragStart = (e: React.DragEvent, sq: Square) => {
-    if (
-      gs.winner ||
-      (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays) ||
-      !sq.occupant ||
-      sq.occupant.color !== gs.turn
-    ) {
+  function handleDragStart(e: React.DragEvent<HTMLButtonElement>, sq: Square) {
+    if (state.winner || state.pendingPromotion || (state.mode === "cpu" && state.turn === state.cpuColor)) {
       e.preventDefault();
       return;
     }
-    dragFrom.current = sq.id;
-    e.dataTransfer.setData("text/plain", sq.id);
-    prepareDragImage(e, sq.occupant as any);
-  };
+    if (!state.board[sq] || state.board[sq]?.color !== state.turn) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData("text/plain", sq);
+    e.dataTransfer.effectAllowed = "move";
+    setState((s) => ({ ...s, selected: sq }));
+  }
 
-  const onDrop = (e: React.DragEvent, sq: Square) => {
+  function handleDrop(e: React.DragEvent<HTMLButtonElement>, sq: Square) {
     e.preventDefault();
-     if (gameOver) return;
-    if (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays) return;
-    const fromId = dragFrom.current || (e.dataTransfer.getData("text/plain") as SquareId);
-    if (!fromId) return;
-    dragFrom.current = null;
-    setGs((prev) => performMove(prev, fromId, sq.id));
-  };
+    if (state.winner || state.pendingPromotion || (state.mode === "cpu" && state.turn === state.cpuColor)) return;
 
- const clickMove = (sq: Square) => {
-  if (gameOver || (gs.ai.mode === "cpu" && gs.turn === gs.ai.cpuPlays)) return;
+    const from = e.dataTransfer.getData("text/plain") as Square;
+    if (!from) return;
 
-
-  // Nothing selected yet → try to select a piece
-  if (!gs.selected) {
-    if (!sq.occupant || sq.occupant.color !== gs.turn) return;
-    setGs({ ...gs, selected: sq.id });
-    return;
-  }
-
-  // Second click on the same square → cancel selection
-  if (gs.selected === sq.id) {
-    setGs({ ...gs, selected: null, message: null }); // optional: clear message too
-    return;
-  }
-
-  // Optional UX: clicking another of your own pieces changes the selection instead of moving
-  if (sq.occupant && sq.occupant.color === gs.turn) {
-    setGs({ ...gs, selected: sq.id });
-    return;
-  }
-
-  // Otherwise, try to move from previously selected square to this square
-  setGs(performMove(gs, gs.selected as SquareId, sq.id));
-};
-
-
-  const handlePromotion = (t: PieceType) => {
-    if (!gs.promotion) return;
-    if (t === "K" || t === "P") {
-      setGs((g) => ({ ...g, message: "Pawns cannot promote to King or Pawn." }));
-      return;
-    }
-    const { square, color } = gs.promotion;
-    const next = deepClone(gs);
-    const s = next.board.find((x) => x.id === square)!;
-
-    if (!promotionAvailable(next, color, t)) {
-      next.message = "You can't promote to that piece right now.";
-      setGs(next);
+    const moves = legalMoves(state, state.turn).filter((m) => m.kind !== "reveal" && m.from === from && m.to === sq);
+    if (!moves.length) {
+      if (state.board[sq]?.color === state.turn) {
+        if (state.secrets[other(state.turn)].revealed) {
+          setState((s) => ({ ...s, status: "You can no longer capture your own pieces after your fifth column has been revealed." }));
+        } else {
+          setState((s) => ({ ...s, selected: sq }));
+        }
+      }
       return;
     }
 
-    let taken = false;
-    if (next.quietus[color][t] > 0) {
-      next.quietus[color][t]--;
-      taken = true;
-    } else if (next.stock[color][t] > 0) {
-      next.stock[color][t]--;
-      taken = true;
-    }
-
-    if (!taken) {
-      next.message = "No available piece in Quietus or Chrysalis for promotion.";
-      setGs(next);
-      return;
-    }
-
-    const deadline = next.moveNumber + 1;
-    s.occupant = {
-      kind: "piece",
-      color,
-      type: t,
-      bornAtTurn: next.moveNumber,
-      mustReturn: true,
-      returnByTurn: deadline,
-    };
-    next.promotion = null;
-setGs(() => {
-  let promoted = applyAutoTransforms(next).newGs;
-
-  // ✅ STALEMATE CHECK (promotion does not run performMove's stalemate logic)
-  const stal = stalemateOutcome(promoted);
-  if (stal) {
-    promoted.winner = stal.winner; // null = draw
-    promoted.winReason = stal.reason;
-    promoted.message =
-      stal.winner === null
-        ? `Draw: ${stal.reason}`
-        : `Winner: ${stal.winner} (${stal.reason})`;
-    return promoted;
+    setState((s) => applyMove(s, moves[0]));
   }
 
-  const lastMoverColor: Color = promoted.turn === "white" ? "black" : "white";
-  const opponent: Color = promoted.turn;
-  const ksq = findKingSquare(promoted, opponent);
-
-  if (ksq) {
-    const attackerHasKing = !!findKingSquare(promoted, lastMoverColor);
-    const prot = promoted.kingProtectedUntil[opponent];
-    const kingProtectedNow = prot !== null && promoted.moveNumber === prot;
-
-    if (attackerHasKing && !kingProtectedNow) {
-      const inCheck = isSquareAttacked(promoted, ksq.file, ksq.rank, lastMoverColor);
-      if (inCheck) promoted.message = `Check on ${opponent}!`;
-    }
+  function handleDragOver(e: React.DragEvent<HTMLButtonElement>) {
+    e.preventDefault();
   }
 
-  return promoted;
-});  };
-
-
-
-  const whiteStock = gs.stock.white;
-  const blackStock = gs.stock.black;
-
-  const rankOrder = flipped ? [...RANKS].slice().reverse() : RANKS;
-  const fileOrder = flipped ? [...Array(8).keys()].reverse() : [...Array(8).keys()];
-  const gameOver = gs.winReason !== null;
-const isCpuThinking =
-  gs.ai.mode === "cpu" &&
-  gs.turn === gs.ai.cpuPlays &&
-  !gs.winReason &&
-  !(gs.promotion && gs.promotion.color !== gs.ai.cpuPlays);
-  
-useEffect(() => {
-  if (isCpuThinking) {
-    setShowThinking(true);
-  } else {
-    const t = window.setTimeout(() => setShowThinking(false), 150);
-    return () => window.clearTimeout(t);
+  function handleReveal() {
+    if (!canReveal) return;
+    setState((s) => applyMove(s, { from: "a1", kind: "reveal" }));
   }
-}, [isCpuThinking]);
 
-  
-  // MOBILE LAYOUT
-  if (isMobile) {
-    return (
-      <div className="min-h-screen w-full bg-neutral-900 text-neutral-100 flex flex-col items-stretch p-3 sm:p-4 pb-24">
-        {/* Top bar: Rules + yellow messages */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <button
-            onClick={() => setShowRules(true)}
-            className="text-[11px] sm:text-base font-semibold text-neutral-200 tracking-wide hover:text-white border border-neutral-600 rounded-full px-3 py-1 bg-neutral-800/80"
-          >
-            INFO
-          </button>
-  <a
-  href="https://www.buymeacoffee.com/kalinyanev"
-  className="inline-block border-[0.5px] bg-[#000000] border-white rounded-2xl px-2"
-  target="_blank"
-  rel="noreferrer"
->
-  {/* Image for non-iOS Safari, with fallback */}
-  {!coffeeImgFailed && !isIosSafari && (
-    <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
-      className="block mx-auto"
-      alt="Buy the authors a coffee"
-      onError={() => setCoffeeImgFailed(true)}
-    />
-  )}
+  function handlePromotion(type: Exclude<PieceType, "K" | "P">) {
+    if (!state.pendingPromotion) return;
+    setState((s) => applyMove({ ...s, pendingPromotion: null }, { ...s.pendingPromotion!.moveBase, promotion: type }));
+  }
 
-  {/* Text-only version on iOS Safari or if image fails */}
-  {(coffeeImgFailed || isIosSafari) && (
-   <span
-  className="
-    block sm:text-xs text-center font-Poppins
-    px-3 py-2 rounded-2xl bg-[#000000] text-white font-bold text-[11px]
-  "
->
-  Buy the authors a coffee ☕
-</span>
-  )}
-</a>
+  const thinking = state.mode === "cpu" && state.turn === state.cpuColor && !state.pendingPromotion && !state.winner;
 
+  return (
+    <div className="min-h-screen text-[#0f172a]" style={{ background: PAGE_BG }}>
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[280px_minmax(520px,1fr)_280px] gap-4">
+          <div className="space-y-4">
+            <div className="rounded-3xl p-4 border" style={{ background: PANEL, borderColor: BORDER }}>
+              <div className="text-xl font-semibold mb-3">Fifth Column Chess</div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={reset} className="px-4 py-2 rounded-2xl font-semibold" style={{ background: "#ffffff", color: TEXT }}>
+                  New Game
+                </button>
+                <button onClick={() => setState((s) => ({ ...s, flipped: !s.flipped }))} className="px-4 py-2 rounded-2xl font-semibold" style={{ background: PANEL_2, color: TEXT }}>
+                  Flip Board
+                </button>
+              </div>
+              <div className="mt-4 text-sm opacity-80">Turn: <span className="font-semibold capitalize">{state.turn}</span></div>
+              <div className="mt-2 min-h-16 rounded-2xl p-3 text-sm border" style={{ background: "#ede7df", borderColor: BORDER, color: TEXT }}>
+                {state.result || state.status}
+              </div>
 
-            <button
-            onClick={newGame}
-            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow text-[11px] sm:text-base"
-          >
-            New Game
-          </button>
-          <button
-            onClick={() => setFlipped((f) => !f)}
-            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow text-[11px] sm:text-base"
-          >
-            Flip Board
-          </button>
-      
-         
-        </div>
-  {/* Row 2: message */}
-        
-        {/* Row 3: Computer opponent box */}
-       <div className="flex justify-center mb-2">
-  <div className="w-full p-2 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-1">
-    <div className="flex items-center justify-between text-sm">
-      <div className="font-semibold">Computer opponent</div>
-      {showThinking && (
-        <div className="flex items-center gap-1 text-[10px] tracking-[0.18em] text-white">
-          <img
-  src="/cover-bmac.png"
-  alt="CPU thinking"
-  className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
-  style={{
-    filter: "none",
-    colorScheme: "light",
-  }}
-/>
+              <div className="mt-3">
+                <button onClick={() => setState((s) => ({ ...s, showRules: true }))} className="px-4 py-2 rounded-2xl font-semibold" style={{ background: ACCENT, color: "#ffffff" }}>
+                  Rules & Info
+                </button>
+              </div>
+            </div>
 
-          <span>thinking …</span>
-        </div>
-      )}
-    </div>
-    <label className="flex items-center justify-between gap-2 text-sm">
-
-              <span>Mode</span>
-              <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
-                value={gs.ai.mode}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
-              >
-                <option value="human">Human vs Human</option>
-                <option value="cpu">Human vs Computer</option>
-              </select>
-            </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
-              <span>Computer plays</span>
-              <select
-                className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm"
-                value={gs.ai.cpuPlays}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
-              >
-                <option value="white">White</option>
-                <option value="black">Black</option>
-              </select>
-            </label>
-            <label className="flex items-center justify-between gap-2 text-sm">
-              <span>Level</span>
-              <select
-                 className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-left"
-                    style={{ textAlignLast: "right" }}
-
-                value={gs.ai.level}
-                onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
-              >
-                <option >Easy</option>
-                <option >Medium</option>
-                <option >Hard</option>
-                <option>Master</option>
-              </select>
-            </label>
+            <div className="rounded-3xl p-4 border space-y-3" style={{ background: PANEL, borderColor: BORDER }}>
+              <div className="text-lg font-semibold">Computer opponent</div>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>Mode</span>
+                <select className="rounded-xl px-3 py-2" style={{ background: PANEL_2, border: `1px solid ${BORDER}`, color: TEXT }} value={state.mode} onChange={(e) => setState((s) => ({ ...s, mode: e.target.value as Mode }))}>
+                  <option value="human">Human vs Human</option>
+                  <option value="cpu">Human vs Computer</option>
+                </select>
+              </label>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>Computer plays</span>
+                <select className="rounded-xl px-3 py-2" style={{ background: PANEL_2, border: `1px solid ${BORDER}`, color: TEXT }} value={state.cpuColor} onChange={(e) => setState((s) => ({ ...s, cpuColor: e.target.value as Color }))}>
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                </select>
+              </label>
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>Level</span>
+                <select className="rounded-xl px-3 py-2" style={{ background: PANEL_2, border: `1px solid ${BORDER}`, color: TEXT }} value={state.difficulty} onChange={(e) => setState((s) => ({ ...s, difficulty: e.target.value as Difficulty }))}>
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                  <option value="Master">Master</option>
+                </select>
+              </label>
+              {thinking && <div className="text-xs tracking-[0.18em] uppercase" style={{ color: ACCENT }}>thinking…</div>}
+            </div>
           </div>
-        </div>
 
-{/* Mobile-only top message bar (human vs human; readable from the top side) */}
-{gs.ai.mode === "human" && (
-  <div className="sm:hidden flex justify-center mb-2">
-    <div className="w-full max-w-[min(90vw,40rem)]">
-      <button
-        className={`w-full px-3 py-2 rounded-2xl text-[11px] text-center border
-          ${
-            gs.message
-              ? "bg-[#83b2be] text-black border-neutral-700"
-              : "bg-neutral-800 text-neutral-300 border-neutral-700"
-          }`}
-        disabled
-      >
-        {/* Rotate the text 180° so the TOP-side player can read it */}
-        <div className="rotate-180">
-          {gs.message ? (
-            <>
-              {gs.message} ({gs.turn} turn)
-            </>
-          ) : (
-            <>
-              Turn: <b className="capitalize">{gs.turn}</b>
-            </>
-          )}
-        </div>
-      </button>
-    </div>
-  </div>
-)}
+          <div className="space-y-4">
+            <div className="rounded-[28px] p-3 md:p-4 border shadow-2xl" style={{ background: PANEL, borderColor: BORDER }}>
+              <div className="grid grid-cols-[auto_1fr] grid-rows-[1fr_auto] gap-x-2 gap-y-2 items-stretch">
+                <div className="grid grid-rows-8">
+                  {boardOrderRanks.map((rank) => (
+                    <div key={`rank-${rank}`} className="flex items-center justify-center text-sm select-none" style={{ color: ACCENT }}>
+                      {rank}
+                    </div>
+                  ))}
+                </div>
 
+                <div className="grid grid-cols-8 overflow-hidden rounded-2xl">
+                  {boardOrderRanks.map((rank) =>
+                    boardOrderFiles.map((file) => {
+                      const sq = `${file}${rank}` as Square;
+                      const lm = state.lastMove;
+                      const highlight: "from" | "to" | "none" = lm?.from === sq ? "from" : lm?.to === sq ? "to" : "none";
+                      return (
+                        <SquareView
+                          key={sq}
+                          sq={sq}
+                          piece={state.board[sq]}
+                          selected={state.selected === sq}
+                          highlight={highlight}
+                          onClick={() => handleClick(sq)}
+                          onDragStart={handleDragStart}
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                        />
+                      );
+                    }),
+                  )}
+                </div>
 
+                <div />
 
+                <div className="grid grid-cols-8">
+                  {boardOrderFiles.map((file) => (
+                    <div key={`file-${file}`} className="flex items-center justify-center pt-1 text-sm lowercase select-none" style={{ color: ACCENT }}>
+                      {file}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {/* Row 4: Board */}
-        <div className="flex justify-center mt-0">
-          <div
-            className="grid grid-cols-8 select-none rounded-xl overflow-hidden shadow-2xl w-full"
-            style={{
-              backgroundImage: `url(${BOARD_BG})`,
-              backgroundSize: "100% 100%",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-            }}
-          >
-            {rankOrder.map((r) =>
-              fileOrder.map((f) => {
-                const sq = gs.board.find((s) => s.file === f && s.rank === r)!;
-                const isSel = gs.selected === sq.id;
-                const lm = gs.lastMove;
-                const showAi = gs.ai.mode === "cpu" && lm && lm.by === gs.ai.cpuPlays;
-                const isFrom = showAi && lm!.from === sq.id;
-                const isTo = showAi && lm!.to === sq.id;
-const occ = sq.occupant;
-const hidesBlue =
-  !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
-                return (
-                  <div
-                    key={sq.id}
-                    onClick={() => clickMove(sq)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => onDrop(e, sq)}
-                    className={`relative aspect-square ${
-                      isSel ? "outline outline-4 outline-emerald-400/80" : ""
-                    }`}
-                 style={{ background: "transparent" }}
-                  >
-                    {isFrom && (
-                      <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
-                    )}
-                    {isTo && (
-                      <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
-                    )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(() => {
+  const valueMap = { K: 0, Q: 9, R: 5, B: 3, N: 3, P: 1 };
+  const whiteTotal = state.quietus.white.reduce((s, p) => s + valueMap[p.type], 0);
+  const blackTotal = state.quietus.black.reduce((s, p) => s + valueMap[p.type], 0);
 
+  const diff = whiteTotal - blackTotal;
 
-{sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} flip={hvhFlipRank(r)} />
-)}
+  const whiteScore = diff > 0 ? diff : 0;
+  const blackScore = diff < 0 ? -diff : 0;
 
-                    {sq.occupant?.kind === "metamorph" && (
-                      <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                        <Metamorph color={sq.occupant.color} />
-                      </div>
-                    )}
-
-                    {sq.occupant?.kind === "piece" && (
-                      <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                        <Piece
-  occ={sq.occupant}
-  flip={hvhFlipRank(r) && !!sq.blueSymbol && r >= 3 && r <= 6}
-/>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-         {/* Fixed message bar under the board */}
-<div className="flex justify-center mt-2">
-  <div className="w-full max-w-[min(90vw,40rem)]">
-    <button
-      className={`w-full px-3 py-2 rounded-2xl text-[11px] sm:text-xs text-center border
-        ${
-          gs.message
-            ? "bg-[#83b2be] text-black border-neutral-700"
-            : "bg-neutral-800 text-neutral-300 border-neutral-700"
-        }`}
-      disabled
-    >
-<div className="w-full text-center text-[11px] sm:text-xs">
-  {gs.message ? (
+  return (
     <>
-      {gs.message} ({gs.turn} turn)
+      <CapturedRow title="Quietus · Black captured pieces" pieces={state.quietus.black} score={blackScore} fifthColumnPieceIds={[state.secrets.white.pieceId, state.secrets.black.pieceId]} />
+      <CapturedRow title="Quietus · White captured pieces" pieces={state.quietus.white} score={whiteScore} fifthColumnPieceIds={[state.secrets.white.pieceId, state.secrets.black.pieceId]} />
     </>
-  ) : (
-    <>
-      Turn: <b className="capitalize">{gs.turn}</b>
-    </>
-  )}
-</div>
-    </button>
-  </div>
-</div>
-        {/* Row 5: Two chrysalises side by side */}
-      <div className="mt-4 flex flex-row gap-4 justify-center">
-        <div className="flex-1 min-w-[120px] max-w-xs justify-left">
-          <h2 className="text-sm font-semibold mb-1 text-center">White chrysalis</h2>
-          {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.75] origin-top">
-            <StockView stock={whiteStock} color="white" />
+  );
+})()}
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 min-w-[120px] max-w-xs justify-right">
-          <h2 className="text-sm font-semibold mb-1 text-center">Black chrysalis</h2>
-          {/* Smaller pieces on mobile via scale */}
-          <div className="scale-[0.75] origin-top">
-            <StockView stock={blackStock} color="black" align="right" />
+          <div className="space-y-4">
+            <div className="rounded-3xl p-4 border space-y-3" style={{ background: PANEL, borderColor: BORDER }}>
+              <div className="text-lg font-semibold">Fifth column</div>
+              {state.mode === "human" ? (
+                <div className="flex justify-center gap-3 px-3 py-1">
+                  {(["white", "black"] as Color[]).map((side) => {
+                    const sideSecret = state.secrets[side];
+                    const currentSquare = (Object.keys(state.board) as Square[]).find((sq) => state.board[sq]?.id === sideSecret.pieceId) || null;
+                    const sidePiece = currentSquare ? state.board[currentSquare] : null;
+                    const originalPiece = sidePiece || {
+                      id: sideSecret.pieceId,
+                      type: sideSecret.pieceId.split("-")[1] as PieceType,
+                      color: side,
+                      moved: true,
+                    };
+
+                    return (
+                      <div key={`wrap-${side}`} className="flex flex-col items-center gap-2">
+                        <div className="text-[10px] uppercase tracking-[0.12em]" style={{ color: "#000", opacity: 0.7 }}>
+                          {side}
+                        </div>
+                        <FifthColumnCard
+                          revealed={state.peek === side}
+                          info={{ secret: sideSecret, piece: sidePiece, originalPiece }}
+                          onToggle={() => setState((s) => ({ ...s, peek: s.peek === side ? "none" : side }))}
+                          onHide={() => setState((s) => ({ ...s, peek: "none" }))}
+                          canReveal={!state.winner && !state.pendingPromotion && !sideSecret.revealed && state.turn === side}
+                          isSecretRevealed={sideSecret.revealed}
+                          onReveal={() => {
+                            if (state.turn === side) handleReveal();
+                          }}
+                          compact
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <FifthColumnCard
+                  revealed={state.peek === peekSide}
+                  info={visibleIntel ? { secret: visibleIntel.secret, piece: visibleIntel.piece, originalPiece: visibleIntel.originalPiece } : null}
+                  onToggle={() => setState((s) => ({ ...s, peek: s.peek === peekSide ? "none" : peekSide }))}
+                  onHide={() => setState((s) => ({ ...s, peek: "none" }))}
+                  canReveal={canReveal}
+                  isSecretRevealed={state.secrets[peekSide].revealed}
+                  onReveal={handleReveal}
+                />
+              )}
+            </div>
+
+            <div className="rounded-3xl p-4 border" style={{ background: PANEL, borderColor: BORDER }}>
+              <div className="text-lg font-semibold mb-3">Variant summary</div>
+              <div className="text-sm space-y-2 opacity-90">
+                <p>Each player secretly owns one 'fifth column' piece - a pawn, bishop, or knight on the opponent's side.</p>
+                <p>On your turn, you may reveal that piece instead of moving. It flips color and joins your side.</p>
+                <p>Before the fifth column in one's side is revealed, the player may self-capture their own non-king, non-queen pieces in an episode of paranoia.</p>
+                <p>All the rest is like the classical chess.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-        {/* Quietus – mobile only, fixed at bottom */}
-        <div className="mt-1 left-3 right-3 bottom-3 bg-neutral-800/95 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
-          <div className="flex items-center justify-between">
-            <div className="font-semibold tracking-wide text-[14px]">Quietus</div>
-            <div className="text-[11px] sm:text-xs opacity-70 text-right">
-              Captured pieces
-            </div>
-          </div>
-
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="scale-75 origin-top">
-            <QuietusRow label="White" color="white" align="left" counts={gs.quietus.white}/>
-            </div>
-            <div className="scale-75 origin-top">
-            <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black}/>
-            </div>
-          </div>
-        </div>
-
-
-        {/* Rules modal */}
-       
-  {showRules && (
-  <div
-    className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
-    onClick={() => {
-      // Backdrop click closes only on desktop/tablet
-      if (!isMobile) setShowRules(false);
-    }}
-  >
-    <div
-      className="max-h-[85vh] w-full max-w-3xl overflow-auto"
-      // Desktop: prevent backdrop click when clicking inside
-      onClick={(e) => {
-        if (!isMobile) e.stopPropagation();
-      }}
-      // Mobile: detect tap vs scroll
-      onTouchStart={handleRulesTouchStart}
-      onTouchMove={handleRulesTouchMove}
-      onTouchEnd={handleRulesTouchEnd}
-    >
-             <div className="bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6">
-              <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
-                Kafka Chess - Rules &amp; Information
-              </h2>
-              <p className="mb-4 opacity-90">
-                This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
-                Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
-                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons). First published on 19th of October 2025.
-                
-              </p>
-<img
-  src="https://kafkachess.com/authors.JPG"
-  alt="Authors Kalin and Ivaylo Yanev"
-  className="w-full rounded-xl mb-4 border border-neutral-700"
-/>
-              <h3 className="text-xl font-semibold mt-4 mb-2">Setup</h3>
-              <ul className="list-disc pl-6 space-y-1 opacity-90">
-                <li>
-                  <strong>Board:</strong> 8×8 classical.
-                </li>
-                <li>
-                  <strong>Ranks 1-2 and 7-8:</strong> filled with metamorphs (round tokens).
-                </li>
-                <li>
-                  <strong>Ranks 3-6 - 'Metamorphia':</strong> every square displays a piece card - a shuffled layout of
-                  all 32 classical chess pieces (no color division), one per square.
-                </li>
-                <li>
-                  <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
-                  the classical 16 per color/player) - drawn to transform when stepping on a piece card in Metamorphia (ranks
-                  3-6); and restored back there when that piece changes type into another.
-                </li>
-                <li>
-                  <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
-                  source for promotion choices.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Pieces</h3>
-              <ul className="list-disc pl-6 space-y-2 opacity-90">
-                <li>
-                  <strong>Metamorphs</strong> (16 per player): Move 1 square vertically toward the center;
-                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3-6) they transform into
-                  that square’s piece card if available in the player's Chrysalis, and permanently disappear; otherwise, they remain
-                  metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
-                  reach the last rank.
-                </li>
-                <li>
-                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to Metamorphia (ranks 3-6).
-                </li>
-                <li>
-                  <strong>King:</strong> Standard chess movement, but confined to Metamorphia. *King safety: a king is
-                  immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
-                  can't be captured unless one's own king is on the board.
-                </li>
-                <li>
-                  <strong>Pawns:</strong> Standard chess movement and capture. The only pieces except metamorphs allowed
-                  to progress outside Metamorphia (outside ranks 3-6). On reaching the last rank they promote to any available
-                  piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece must return
-                  to ranks 3–6 according to its classical movement next turn or it goes to Quietus.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Rules</h3>
-              <ul className="list-disc pl-6 space-y-2 opacity-90">
-                <li>
-                  <strong>Setting up and starting:</strong> Metamorphs are put on the board. Pieces are ordered in each
-                  player's Chrysalis. The 32 piece cards are shuffled and - if in a physical game setting - dealt by the white player on Metamorphia's
-                  ranks 3–6 (order: a6 → h6, a5 → h5, a4 → h4, a3 → h3). White moves first.
-                </li>
-                <li>
-                  <strong>Metamorphia interactions:</strong> Landing on a piece card instantly transforms the unit into
-                  that piece only if your Chrysalis has one available; otherwise, it stays as-is and will auto-transform
-                  later if it remains on that square and needed stock appears.
-                </li>
-                <li>
-                  <strong>Special rule for not blocking king piece cards by a metamorph:</strong> If a player has an
-                  active king piece in the Metamorphia, it is forbidden for its metamorphs to step on an unoccupied king
-                  piece card. Such a move is illegal and will be rejected.
-                </li>
-                <li>
-                  <strong>Board restrictions:</strong> All real pieces must stay on ranks 3-6; only pawns may enter
-                  outside. Metamorphs move only one square vertically toward the center and never capture or jump.
-                </li>
-                <li>
-                  <strong>Chrysalis (piece supply):</strong> Limited to starting counts (K-1, Q-1, R-2, B-2, N-2, P-8).
-                  When a unit transforms, the new piece is taken from the Chrysalis and the previous piece type is
-                  returned back to the Chrysalis.
-                </li>
-                <li>
-                  <strong>Quietus (captures):</strong> Captured pieces go here permanently. Promotion takes the chosen
-                  piece from Quietus first, otherwise from Chrysalis.
-                </li>
-                <li>
-                  <strong>Promotion rule:</strong> On reaching the last rank, a pawn promotes to any available piece in
-                  Quietus or Chrysalis oher than King. The promoted piece must return to Metamorphia (ranks 3-6) on its very next turn or it goes to
-                  Quietus. If both player's Chrysalis and Quietus are empty, the pawn does not transform; since it can't return to Metamorphia, on the next turn it is taken to Quietus.
-                </li>
-                <li>
-                  <strong>Edge metamorph rule:</strong> Moving a metamorph 1 → 2 or 8 → 7 does not transform it.
-                </li>
-                <li>
-                  <strong>King safety and capture:</strong> A king is immune to capture on the opponent’s immediate next
-                  turn after it appears. You cannot capture the enemy king if your own king is not on the board.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Victory conditions</h3>
-              <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Capturing the king.</li>
-                <li>
-                  Opponent has no king and (no pawns or all pawns immobile) and (no metamorphs or all metamorphs
-                  immobile).
-                </li>
-                <li>
-                Metamorphic stalemate (a sole king is blocked by opposite metamorphs and/or own pieces which are blocked by opposite metamorphs) while the opposite player is kingless.
-                </li>
-                <li>
-                  Threefold repetition when the opponent is kingless (the side with a king wins).
-                </li>
-                <li>50-move rule when the opponent is kingless. (The metamorphs have the same status as pawns regarding the rule - any move by a metamorph resents the count.)</li>
-              </ol>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Draw conditions</h3>
-              <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Metamorphic stalemate (both opponents are kingful, one of the kings is blocked by opposite metamorphs and/or by own pieces which are blocked by opposite metamorphs). </li>
-                <li>
-                  Threefold repetition when both players are either kingless, or both have kings.
-                </li>
-                <li>50-move rule when both players are either kingless, or kingful.</li>
-                <li>Mutual agreement.</li>
-              </ol>
-
-              <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
-              </p>
-                     <p className="mt-4 opacity-90">
-                *Special thanks to H.G.Muller who dialectically helped refining some end game rules - especially winning by three-fold repetition, and Theodore De Marville for his quick critical thinking.
-               </p>
-              <p className="mt-4 text-sm opacity-70">
-                Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
-              </p>
+      {state.pendingPromotion && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md rounded-3xl p-5 border" style={{ background: PANEL, borderColor: BORDER }}>
+            <div className="text-xl font-semibold mb-3">Choose promotion</div>
+            <div className="grid grid-cols-4 gap-3">
+              {PROMOTION_TYPES.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => handlePromotion(type)}
+                  className="rounded-2xl p-4 text-6xl leading-none"
+                  style={{ background: PANEL_2, color: state.pendingPromotion?.color === "white" ? "#111" : "#000" }}
+                >
+                  {GLYPHS[state.pendingPromotion!.color][type]}
+                </button>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      
-        {/* Promotion modal */}
-        {gs.promotion && (
-          <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
-            <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px]">
-              <div className="text-lg font-semibold mb-2">Promote pawn</div>
-              <div className="grid grid-cols-4 gap-2">
-  {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
-    <button
-      key={t}
-      className="p-3 rounded-xl bg-white text-neutral-900 disabled:opacity-40"
-      disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
-      onClick={() => handlePromotion(t)}
-    >
-      <span
-        className="text-3xl leading-none "
-        style={{
-          fontFamily: "'Noto Chess','DejaVu Sans',serif",
-          // white side promotes → light piece, black side → dark piece
-          color:
-            gs.promotion?.color === "white"
-              ? "#ffffff" 
-              : "#111111", 
-              backgroundColor:
-            gs.promotion?.color === "white"
-        ? "#000000"  
-        : "#ffffff", 
-        }}
-      >
-        {pieceGlyph(t)}
-      </span>
-    </button>
-  ))}
-
-              </div>
-              <div className="mt-3 text-sm opacity-80">
-                Promote only to Q, R, B, or N. If available in Quietus, it will be taken from there first.
-              </div>
+      {state.showRules && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setState((s) => ({ ...s, showRules: false }))}>
+          <div className="w-full max-w-4xl max-h-[88vh] overflow-auto rounded-3xl p-6 border" style={{ background: PANEL, borderColor: BORDER }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="text-2xl font-semibold">Rules & Info</div>
+              <button onClick={() => setState((s) => ({ ...s, showRules: false }))} className="px-4 py-2 rounded-2xl font-semibold" style={{ background: ACCENT, color: "#ffffff" }}>
+                Close
+              </button>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // DESKTOP LAYOUT (old view)
-return (
-  <div className="min-h-screen w-full flex items-start justify-center gap-4 bg-neutral-900 p-4 pl-48 text-neutral-100">
-    {/* Left gutter: BuyMeACoffee + rules, in the space between edge and board */}
-<div className="fixed top-3 left-4 z-50 flex flex-col gap-1 items-start w-64">
-  {/* Buy Me a Coffee button */}
-  <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank">
-    <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
-      className="block w-full h-auto"
-    />
-  </a>
-
-  {/* Rules button */}
-  <button
-    onClick={() => setShowRules(true)}
-    className="text-sm font-semibold text-neutral-300 tracking-wide hover:text-neutral-200"
-  >
-    rules + info
-  </button>
-</div>
-      {/* Left panel: white chrysalis + controls */}
-      <div className="flex flex-col gap-3 w-56 shrink-0">
-        <h2 className="text-lg font-semibold">White chrysalis</h2>
-        <StockView stock={whiteStock} color="white" />
-        <div className="mt-2 flex gap-2">
-          <button
-            onClick={newGame}
-            className="px-3 py-2 rounded-2xl bg-neutral-200 text-neutral-900 font-semibold shadow"
-          >
-            New Game
-          </button>
-          <button
-            onClick={() => setFlipped((f) => !f)}
-            className="px-3 py-2 rounded-2xl bg-neutral-700 text-neutral-100 font-semibold shadow"
-          >
-            Flip Board
-          </button>
-        </div>
-        <div className="text-sm opacity-80">
-          Turn: <span className="font-bold capitalize">{gs.turn}</span>
-        </div>
-        {gs.message && (
-          <div className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-1 rounded border border-yellow-500/50">
-            {gs.message}
-          </div>
-        )}
-        <div className="w-full p-3 rounded-xl bg-neutral-800/70 border border-neutral-700 space-y-2">
-  <div className="flex items-center justify-between text-sm">
-    <div className="font-semibold">Computer opponent</div>
-    {showThinking && (
-      <div className="flex items-center text-[10px] tracking-[0.18em] text-white">
-       <img
-  src="/cover-bmac.png"
-  alt="CPU thinking"
-  className="w-4 h-4 object-contain rounded-full shadow animate-pulse"
-  style={{
-    filter: "none",
-    colorScheme: "light",
-  }}
-/>
-
-        <span>thinking…</span>
-      </div>
-    )}
-  </div>
-  <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
-
-            <span min-w-0>Mode</span>
-            <select
-              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
-              value={gs.ai.mode}
-              onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, mode: e.target.value as any } })}
-            >
-              <option value="human">Human vs Human</option>
-              <option value="cpu">Human vs Engine</option>
-            </select>
-          </label>
-          <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
-            <span min-w-0>Computer plays</span>
-            <select
-              className="justify-self-end w-auto bg-neutral-900 border border-neutral-600 rounded px-2 py-1"
-              value={gs.ai.cpuPlays}
-              onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, cpuPlays: e.target.value as Color } })}
-            >
-              <option value="white">White</option>
-              <option value="black">Black</option>
-            </select>
-          </label>
-          <label className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
-            <span min-w-0>Level</span>
-            <select
-              className="bg-neutral-900 border border-neutral-600 rounded px-2 py-1 text-sm text-left"
-              style={{ textAlignLast: "right" }}
-              value={gs.ai.level}
-              onChange={(e) => setGs({ ...gs, ai: { ...gs.ai, level: e.target.value as any } })}
-            >
-              <option>Easy</option>
-              <option>Medium</option>
-              <option>Hard</option>
-              <option>Master</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      {/* Center: board */}
-      <div
-        className="grid grid-cols-8 grid-rows-8 select-none rounded-xl overflow-hidden shadow-2xl"
-        style={{
-          backgroundImage: `url(${BOARD_BG})`,
-          backgroundSize: "100% 100%",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
-        }}
-      >
-        {rankOrder.map((r) =>
-          fileOrder.map((f) => {
-            const sq = gs.board.find((s) => s.file === f && s.rank === r)!;
-            const isSel = gs.selected === sq.id;
-            const lm = gs.lastMove;
-            const showAi = gs.ai.mode === "cpu" && lm && lm.by === gs.ai.cpuPlays;
-            const isFrom = showAi && lm!.from === sq.id;
-            const isTo = showAi && lm!.to === sq.id;
- const occ = sq.occupant;
-  const hidesBlue =
-    !!occ && occ.kind === "piece" && occ.coversBlueSymbol === true;
-            return (
-              <div
-                key={sq.id}
-                onClick={() => clickMove(sq)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onDrop(e, sq)}
-                className={`relative w-20 h-20 ${isSel ? "outline outline-4 outline-emerald-400/80" : ""}`}
-               style={{ background: "transparent" }}
-              >
-                {isFrom && (
-                  <div className="absolute inset-1 rounded-lg ring-4 ring-yellow-400/70 pointer-events-none" />
-                )}
-                {isTo && (
-                  <div className="absolute inset-1 rounded-lg ring-4 ring-green-400/70 pointer-events-none" />
-                )}
-
-              
-{sq.blueSymbol && r >= 3 && r <= 6 && !hidesBlue && (
-  <BlueSymbol type={sq.blueSymbol} />
-)}
-
-                {sq.occupant?.kind === "metamorph" && (
-                  <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-                    <Metamorph color={sq.occupant.color} />
-                  </div>
-                )}
-
-                {sq.occupant?.kind === "piece" && (
-                  <div draggable onDragStart={(e) => onDragStart(e, sq)}>
-<Piece occ={sq.occupant} />
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Right panel: black chrysalis */}
-      <div className="flex flex-col gap-3 w-48 shrink-0 items-end">
-        <h2 className="text-lg font-semibold">Black chrysalis</h2>
-        <StockView stock={blackStock} color="black" align="right" />
-      </div>
- {/* Quietus – desktop old style */}
-      <div className="fixed left-4 right-4 bottom-4 bg-neutral-800/90 backdrop-blur border border-neutral-700 rounded-2xl p-3 shadow-xl z-30">
-        <div className="flex items-center justify-between">
-          <div className="font-semibold tracking-wide">Quietus</div>
-          <div className="text-xs opacity-70">Captured pieces · promotions revive from here if available</div>
-        </div>
-
-{gs.winReason && (
-  <div className="mt-2 px-3 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-200 font-semibold text-sm">
-    <span>
-      {gs.winner === null ? "Draw" : "Winner:"}
-    </span>{" "}
-    {gs.winner !== null && <span className="capitalize">{gs.winner}</span>}
-    <span> · {gs.winReason}</span>
-  </div>
-)}
-
-
-        <div className="mt-2 grid grid-cols-2 gap-3">
-          <QuietusRow label="White" color="white" counts={gs.quietus.white} />
-          <QuietusRow label="Black" color="black" align="right" counts={gs.quietus.black} />
-        </div>
-      </div>
-
-      {/* Rules modal (shared) */}
-      {showRules && (
-        <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4"
-          onClick={() => setShowRules(false)}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-3xl overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6">
-              <h2 className="text-2xl font-semibold text-neutral-100 mb-4">
-                Kafka Chess - Rules &amp; Information
-              </h2>
-              <p className="mb-4 opacity-90">
-                This chess variant was developed by <strong>Kalin Yanev</strong> and his son, <strong>Ivaylo
-                Yanev</strong>, in 2024, in Sofia, Bulgaria. They were not aware of chess variants prior to that; the
-                game appeared as a result of sporadic contemplation assisted by a physical prototype (taken out in early afternoons).
-                First published on 19th of October 2025.
-              </p>
-<img
-  src="https://kafkachess.com/authors.JPG"
-  alt="Authors Kalin and Ivaylo Yanevi"
-  className="w-full rounded-xl mb-4 border border-neutral-700"
-/>
-              <h3 className="text-xl font-semibold mt-4 mb-2">Setup</h3>
-              <ul className="list-disc pl-6 space-y-1 opacity-90">
-                <li>
-                  <strong>Board:</strong> 8×8 classical.
-                </li>
-                <li>
-                  <strong>Ranks 1-2 and 7-8:</strong> filled with metamorphs (round tokens).
-                </li>
-                <li>
-                  <strong>Ranks 3-6 - 'Metamorphia':</strong> every square displays a piece card - a shuffled layout of
-                  all 32 classical chess pieces (no color division), one per square.
-                </li>
-                <li>
-                  <strong>Chrysalis (outside the board):</strong> available piece supply (limited to starting counts of
-                  the classical 16 per color/player) - drawn to transform when stepping on a piece card in Metamorphia (ranks
-                  3-6); and restored back there when that piece changes type into another.
-                </li>
-                <li>
-                  <strong>Quietus (outside the board):</strong> permanent graveyard of captured pieces; also the first
-                  source for promotion choices.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Pieces</h3>
-              <ul className="list-disc pl-6 space-y-2 opacity-90">
-                <li>
-                  <strong>Metamorphs</strong> (16 per player): Move 1 square vertically toward the center;
-                  no captures, no jumping, not capturable. On landing in Metamorphia (ranks 3-6) they transform into
-                  that square’s piece card if available in the player's Chrysalis, and permanently disappear; otherwise, they remain
-                  metamorphs and may keep moving vertically later. Could move on any rank, but not promotable if they
-                  reach the last rank.
-                </li>
-                <li>
-                  <strong>Rooks / Bishops / Queen / Knight:</strong> Standard chess movement, but confined to Metamorphia (ranks 3-6).
-                </li>
-                <li>
-                  <strong>King:</strong> Standard chess movement, but confined to Metamorphia. *King safety: a king is
-                  immune to capturing on the opponent’s immediate next turn after it appears on the board; an enemy king
-                  can't be captured unless one's own king is on the board.
-                </li>
-                <li>
-                  <strong>Pawns:</strong> Standard chess movement and capture. The only pieces except metamorphs allowed
-                  to progress outside Metamorphia (outside ranks 3-6). On reaching the last rank they promote to any available
-                  piece other than the King (taken from Quietus first, else Chrysalis). The promoted piece must return
-                  to ranks 3–6 according to its classical movement next turn or it goes to Quietus.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Rules</h3>
-              <ul className="list-disc pl-6 space-y-2 opacity-90">
-                <li>
-                  <strong>Setting up and starting:</strong> Metamorphs are put on the board. Pieces are ordered in each
-                  player's Chrysalis. The 32 piece cards are shuffled and - if in a physical game setting - dealt by the white player on Metamorphia's
-                  ranks 3–6 (order: a6 → h6, a5 → h5, a4 → h4, a3 → h3). White moves first.
-                </li>
-                <li>
-                  <strong>Metamorphia interactions:</strong> Landing on a piece card instantly transforms the unit into
-                  that piece only if your Chrysalis has one available; otherwise, it stays as-is and will auto-transform
-                  later if it remains on that square and needed stock appears.
-                </li>
-                <li>
-                  <strong>Special rule for not blocking king piece cards by a metamorph:</strong> If a player has an
-                  active king piece in the Metamorphia, it is forbidden for its metamorphs to step on an unoccupied king
-                  piece card. Such a move is illegal and will be rejected.
-                </li>
-                <li>
-                  <strong>Board restrictions:</strong> All real pieces must stay on ranks 3-6; only pawns may enter
-                  outside. Metamorphs move only one square vertically toward the center and never capture or jump.
-                </li>
-                <li>
-                  <strong>Chrysalis (piece supply):</strong> Limited to starting counts (K-1, Q-1, R-2, B-2, N-2, P-8).
-                  When a unit transforms, the new piece is taken from the Chrysalis and the previous piece type is
-                  returned back to the Chrysalis.
-                </li>
-                <li>
-                  <strong>Quietus (captures):</strong> Captured pieces go here permanently. Promotion takes the chosen
-                  piece from Quietus first, otherwise from Chrysalis.
-                </li>
-                <li>
-                  <strong>Promotion rule:</strong> On reaching the last rank, a pawn promotes to any available piece in
-                  Quietus or Chrysalis oher than King. The promoted piece must return to Metamorphia (ranks 3-6) on its very next turn or it goes to
-                  Quietus. If both player's Chrysalis and Quietus are empty, the pawn does not transform; since it can't return to Metamorphia, on the next turn it is taken to Quietus.
-                </li>
-                <li>
-                  <strong>Edge metamorph rule:</strong> Moving a metamorph 1 → 2 or 8 → 7 does not transform it.
-                </li>
-                <li>
-                  <strong>King safety and capture:</strong> A king is immune to capture on the opponent’s immediate next
-                  turn after it appears. You cannot capture the enemy king if your own king is not on the board.
-                </li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Victory conditions</h3>
-              <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Capturing the king.</li>
-                <li>
-                  Opponent has no king and (no pawns or all pawns immobile) and (no metamorphs or all metamorphs
-                  immobile).
-                </li>
-                <li>
-                Metamorphic stalemate (a sole king is blocked by opposite metamorphs and/or own pieces which are blocked by opposite metamorphs) while the opposite player is kingless.
-                </li>
-                <li>
-                  Threefold repetition when the opponent is kingless (the side with a king wins).
-                </li>
-                <li>50-move rule when the opponent is kingless. (The metamorphs have the same status as pawns regarding the rule - any move by a metamorph resents the count.)</li>
-              </ol>
-
-              <h3 className="text-xl font-semibold mt-4 mb-2">Draw conditions</h3>
-              <ol className="list-decimal pl-6 space-y-1 opacity-90">
-                <li>Metamorphic stalemate (both opponents are kingful, one of the kings is blocked by opposite metamorphs and/or by own pieces which are blocked by opposite metamorphs). </li>
-                <li>
-                  Threefold repetition when both players are either kingless, or both have kings.
-                </li>
-                <li>50-move rule when both players are either kingless, or kingful.</li>
-                <li>Mutual agreement.</li>
-              </ol>
-
-              <p className="mt-4 opacity-90">
-                <em>Classical exceptions:</em> 1). No castling,  2) no en passant, 3)  no checkmate (since taking the king - and hence moving into check - is allowed, 4) no classical chess stalemate (same reason) - a metamorphic stalemate instead, explained above.
-              </p>
-              <p className="mt-4 opacity-90">
-                *Special thanks to H.G.Muller who dialectically helped refining some end game rules - especially winning by three-fold repetition, and Theodore De Marville for his quick critical thinking.
-               </p>
-              <p className="mt-2 text-sm opacity-70">
-                Feedback: <a className="underline" href="mailto:kalinyanev@yahoo.com">kalinyanev@yahoo.com</a>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Promotion modal (shared) */}
-      {gs.promotion && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center">
-          <div className="bg-neutral-900 border border-neutral-700 p-4 rounded-xl w-[90%] max-w-[420px]">
-            <div className="text-lg font-semibold mb-2">Promote pawn</div>
-            <div className="grid grid-cols-4 gap-2">
-  {(["Q", "R", "B", "N"] as PieceType[]).map((t) => (
-    <button
-      key={t}
-      className="p-3 rounded-xl bg-white text-neutral-900 disabled:opacity-40"
-      disabled={!promotionAvailable(gs, gs.promotion!.color, t)}
-      onClick={() => handlePromotion(t)}
-    >
-      <span
-        className="text-3xl leading-none"
-        style={{
-          fontFamily: "'Noto Chess','DejaVu Sans',serif",
-          // white side promotes → light piece, black side → dark piece
-         
-           backgroundColor:
-      gs.promotion?.color === "white"
-        ? "#000000"  // light square for white promotion
-        : "#ffffff", // dark square for black promotion
-          color:
-            gs.promotion?.color === "white"
-              ? "#f5f5f5" 
-              : "#111111", 
-
-        }}
-      >
-        {pieceGlyph(t)}
-      </span>
-    </button>
-  ))}
-
-            </div>
-            <div className="mt-3 text-sm opacity-80">
-              Promote only to Q, R, B, or N. If available in Quietus, it will be taken from there first.
+            <div className="space-y-4 text-sm leading-6 opacity-95">
+              <p>This version keeps the Kafka-style visual language but uses a much simpler architecture and a completely different ruleset.</p>
+              <p><strong>1.</strong> The board starts from the normal classical chess setup.</p>
+              <p><strong>2.</strong> At game start, one pawn, bishop, or knight from each side is randomly assigned to the opponent. That hidden asset is the <strong>fifth column</strong>.</p>
+              <p><strong>3.</strong> Only the opponent knows which piece it is.</p>
+              <p><strong>4.</strong> On any turn, including the first, a player may reveal their own fifth column instead of making a move. The revealed piece immediately changes to that player's color and from then on behaves as that side's piece. If it came from a pawn that later promoted, the same physical piece can still be revealed.</p>
+              <p><strong>5.</strong> Until a side's hidden fifth column is revealed, that host player may self-capture their own non-king / non-queen pieces. No piece may ever be suicided off the board.</p>
+              <p><strong>6.</strong> If a hidden fifth-column piece is self-captured by its host player, the game automatically reports that it was the opponent's fifth column.</p>
+              <p><strong>7.</strong> Otherwise the game follows normal chess movement, check, checkmate, stalemate, promotion, castling, and en passant.</p>
             </div>
           </div>
         </div>
