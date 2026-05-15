@@ -1697,9 +1697,9 @@ useEffect(() => {
   {/* Image for non-iOS Safari, with fallback */}
   {!coffeeImgFailed && !isIosSafari && (
     <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
+      src="https://img.buymeacoffee.com/button-api/?text=Support%20the%20game&slug=kalinyanev&button_colour=000000&font_colour=ffffff&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
       className="block mx-auto"
-      alt="Buy the authors a coffee"
+      alt="Support the game"
       onError={() => setCoffeeImgFailed(true)}
     />
   )}
@@ -1712,7 +1712,7 @@ useEffect(() => {
     px-3 py-2 rounded-2xl bg-[#000000] text-white font-bold text-[11px]
   "
 >
-  Buy the authors a coffee ☕
+  Support the game ☕
 </span>
   )}
 </a>
