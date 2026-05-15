@@ -2181,7 +2181,7 @@ return (
   {/* Buy Me a Coffee button */}
   <a href="https://www.buymeacoffee.com/kalinyanev" target="_blank">
     <img
-      src="https://img.buymeacoffee.com/button-api/?text=Buy%20the%20authors%20a%20coffee&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
+      src="https://img.buymeacoffee.com/button-api/?text=Support%20the%20game&emoji=☕&slug=kalinyanev&button_colour=171717&font_colour=83b2be&font_family=Poppins&outline_colour=ffffff&coffee_colour=83b2be"
       className="block w-full h-auto"
     />
   </a>
